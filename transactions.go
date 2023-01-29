@@ -2,7 +2,6 @@ package vivawallet
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,8 +16,7 @@ func (c Client) GetTransaction(trxID string) (*Transaction, error) {
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
 		_, authErr := c.Authenticate()
-		fmt.Errorf("authentication error %s", authErr)
-		return nil, authErr
+		return nil, fmt.Errorf("authentication error %s", authErr)
 	}
 
 	req, _ := http.NewRequest("GET", uri, nil)
@@ -28,12 +26,11 @@ func (c Client) GetTransaction(trxID string) (*Transaction, error) {
 
 	resp, httpErr := c.HTTPClient.Do(req)
 	if httpErr != nil {
-		fmt.Errorf("failed to fetch transaction", httpErr)
-		return nil, httpErr
+		return nil, fmt.Errorf("failed to fetch transaction %s", httpErr)
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New(fmt.Sprintf("failed to fetch transaction with status %d", resp.StatusCode))
+		return nil, fmt.Errorf("failed to fetch transaction with status %d", resp.StatusCode)
 	}
 
 	body, bodyErr := io.ReadAll(resp.Body)
