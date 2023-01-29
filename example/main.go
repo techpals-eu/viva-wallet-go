@@ -11,7 +11,11 @@ func main() {
 	clientSecret := ""
 	client := vivawallet.New(clientID, clientSecret, true)
 
-	token, _ := client.Authenticate()
+	token, err := client.Authenticate()
+	if err != nil {
+		fmt.Printf("Error: %s", err.Error())
+		return
+	}
 	fmt.Printf("Token: %s\n", token.AccessToken)
 
 	req := vivawallet.CheckoutOrderRequest{

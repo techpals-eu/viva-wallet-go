@@ -3,7 +3,6 @@ package vivawallet
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,15 +41,13 @@ func (c Client) CreateOrderPayment(order CheckoutOrderRequest) (*CheckoutRespons
 	uri := checkoutEndpoint(c.Config)
 	data, err := json.Marshal(order)
 	if err != nil {
-		fmt.Errorf("failed to parse order %s", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to parse order %s", err)
 	}
 
 	// Check if auth expired and if so authenticate again
 	if c.HasAuthExpired() {
 		_, authErr := c.Authenticate()
-		fmt.Errorf("authentication error %s", authErr)
-		return nil, authErr
+		return nil, fmt.Errorf("authentication error %s", authErr)
 	}
 
 	req, _ := http.NewRequest("POST", uri, bytes.NewReader(data))
@@ -59,12 +56,11 @@ func (c Client) CreateOrderPayment(order CheckoutOrderRequest) (*CheckoutRespons
 
 	resp, httpErr := c.HTTPClient.Do(req)
 	if httpErr != nil {
-		fmt.Errorf("failed to parse order %s", httpErr)
-		return nil, httpErr
+		return nil, fmt.Errorf("failed to parse order %s", httpErr)
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New(fmt.Sprintf("failed to make order %d", resp.StatusCode))
+		return nil, fmt.Errorf("failed to make order %d", resp.StatusCode)
 	}
 
 	body, bodyErr := io.ReadAll(resp.Body)
