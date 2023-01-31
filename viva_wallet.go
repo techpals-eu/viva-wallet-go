@@ -54,3 +54,4 @@ func ApiUri(c Config) string {
 func isDemo(c Config) bool {
 	return c.Demo
 }
+

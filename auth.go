@@ -101,3 +101,34 @@ func (c Client) authUri() string {
 	}
 	return "https://accounts.vivapayments.com"
 }
+
+type OAuthRoundTripper struct {
+	tokenValue token
+	transport  http.RoundTripper
+}
+
+func (c OAuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	authType := pickAuth(req)
+	fmt.Println(authType)
+
+	resp, err := c.transport.RoundTrip(req)
+	if resp != nil && err == nil {
+		return resp, nil
+	}
+	return nil, err
+}
+
+type AuthType int
+const (
+	oauth AuthType = iota
+	basicAuth
+)
+
+func pickAuth(r *http.Request) AuthType {
+	switch r.RequestURI {
+	case "/":
+		return oauth
+	default:
+		return basicAuth
+	}
+}
