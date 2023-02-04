@@ -10,7 +10,7 @@ import (
 
 type CheckoutOrder struct {
 	Amount               int64  `json:"amount"`
-	CustomerTransactions string `json:"customerTrns"`
+	CustomerTransactions string `json:"customerTrns,omitempty"`
 	Customer             struct {
 		Email       string `json:"email,omitempty"`
 		FullName    string `json:"fullName,omitempty"`
@@ -37,8 +37,8 @@ type CheckoutOrderResponse struct {
 }
 
 // CreateOrderPayment creates a new order payment and returns the `orderCode`.
-func (c Client) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
-	uri := checkoutEndpoint(c.Config)
+func (c OAuthClient) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
+	uri := checkoutOrderUri(c.Config)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse order %s", err)
@@ -76,6 +76,6 @@ func (c Client) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderRespons
 	return response, nil
 }
 
-func checkoutEndpoint(c Config) string {
-	return fmt.Sprintf("%s/%s", ApiUri(c), "checkout/v2/orders")
+func checkoutOrderUri(c Config) string {
+	return fmt.Sprintf("%s/checkout/v2/orders", ApiUri(c))
 }

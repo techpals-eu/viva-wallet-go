@@ -23,8 +23,8 @@ type BalanceTransferResponse struct {
 	CreditTransactionID string `json:"CreditTransactionId"`
 }
 
-func (c Client) BalanceTranfer(walletID string, targetWalletID string, payload BalanceTransfer) (*BalanceTransferResponse, error) {
-	auth := AuthBody(c.Config)
+func (c BasicAuthClient) BalanceTranfer(walletID string, targetWalletID string, payload BalanceTransfer) (*BalanceTransferResponse, error) {
+	auth := BasicAuth(c.Config)
 
 	uri := getBalanceTransferUri(c.Config, walletID, targetWalletID)
 	data, err := json.Marshal(payload)
@@ -61,19 +61,19 @@ func getWalletsUri(c Config) string {
 	return fmt.Sprintf("%s/api/wallets", AppUri(c))
 }
 
-type GetWalletResponse struct {
+type Wallet struct {
 	IBAN         string  `json:"Iban"`
-	WalletID     string  `json:"WalletId"`
+	WalletID     int     `json:"WalletId"`
 	IsPrimary    bool    `json:"IsPrimary"`
 	Amount       float64 `json:"Amount"`
 	Available    float64 `json:"Available"`
 	Overdraft    float64 `json:"Overdraft"`
 	FriendlyName string  `json:"FriendlyName"`
-	CurrencyCode int     `json:"CurrencyCode"`
+	CurrencyCode string  `json:"CurrencyCode"`
 }
 
-func (c Client) RetrieveWallet() (*GetWalletResponse, error) {
-	auth := AuthBody(c.Config)
+func (c BasicAuthClient) GetWallets() ([]Wallet, error) {
+	auth := BasicAuth(c.Config)
 
 	uri := getWalletsUri(c.Config)
 
@@ -83,11 +83,11 @@ func (c Client) RetrieveWallet() (*GetWalletResponse, error) {
 
 	resp, httpErr := c.HTTPClient.Do(req)
 	if httpErr != nil {
-		return nil, fmt.Errorf("failed to get wallets %s", httpErr)
+		return nil, fmt.Errorf("failed to get wallet %s", httpErr)
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to get wallets with status %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to get wallet with status %d", resp.StatusCode)
 	}
 
 	body, bodyErr := io.ReadAll(resp.Body)
@@ -95,8 +95,8 @@ func (c Client) RetrieveWallet() (*GetWalletResponse, error) {
 		return nil, bodyErr
 	}
 
-	r := &GetWalletResponse{}
-	if jsonErr := json.Unmarshal(body, r); jsonErr != nil {
+	var r []Wallet
+	if jsonErr := json.Unmarshal(body, &r); jsonErr != nil {
 		return nil, jsonErr
 	}
 	return r, nil

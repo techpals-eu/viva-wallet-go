@@ -21,7 +21,7 @@ type TokenResponse struct {
 // Authenticate retrieves the access token to continue making requests to Viva's API. It
 // returns the full response of the API and stores the token and expiration time for
 // later use.
-func (c Client) Authenticate() (*TokenResponse, error) {
+func (c OAuthClient) Authenticate() (*TokenResponse, error) {
 	uri := c.tokenEndpoint()
 	auth := AuthBody(c.Config)
 
@@ -56,32 +56,34 @@ func (c Client) Authenticate() (*TokenResponse, error) {
 }
 
 // AuthToken returns the token value
-func (c Client) AuthToken() string {
+func (c OAuthClient) AuthToken() string {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
 
 	t := c.tokenValue.value
+
+	c.lock.RUnlock()
 	return t
 }
 
 // SetToken sets the token value and the expiration time of the token.
-func (c Client) SetToken(tokenValue string, expires time.Time) {
+func (c OAuthClient) SetToken(value string, expires time.Time) {
 	c.lock.Lock()
-	defer c.lock.Unlock()
 
-	c.tokenValue = token{
-		value:   tokenValue,
-		expires: expires,
-	}
+	c.tokenValue.value = value
+	c.tokenValue.expires = expires
+
+	c.lock.Unlock()
 }
 
 // HasAuthExpired returns true if the expiry time of the token has passed and false
 // otherwise.
-func (c Client) HasAuthExpired() bool {
+func (c OAuthClient) HasAuthExpired() bool {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
 
 	expires := c.tokenValue.expires
+
+	c.lock.RUnlock()
+
 	now := time.Now()
 	return now.After(expires)
 }
@@ -91,15 +93,18 @@ func AuthBody(c Config) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func (c Client) tokenEndpoint() string {
+func BasicAuth(c Config) string {
+	auth := fmt.Sprintf("%s:%s", c.MerchantID, c.APIKey)
+	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func (c OAuthClient) tokenEndpoint() string {
 	return fmt.Sprintf("%s/%s", c.authUri(), "/connect/token")
 }
 
-func (c Client) authUri() string {
+func (c OAuthClient) authUri() string {
 	if isDemo(c.Config) {
 		return "https://demo-accounts.vivapayments.com"
 	}
 	return "https://accounts.vivapayments.com"
 }
-
-
