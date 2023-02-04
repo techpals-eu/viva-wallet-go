@@ -51,7 +51,13 @@ func ApiUri(c Config) string {
 	return "https://api.vivapayments.com"
 }
 
+func AppUri(c Config) string {
+	if isDemo(c) {
+		return "https://demo.vivapayments.com"
+	}
+	return "https://www.vivapayments.com"
+}
+
 func isDemo(c Config) bool {
 	return c.Demo
 }
-
