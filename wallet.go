@@ -61,7 +61,7 @@ func getWalletsUri(c Config) string {
 	return fmt.Sprintf("%s/api/wallets", AppUri(c))
 }
 
-type GetWalletsResponse struct {
+type GetWalletResponse struct {
 	IBAN         string  `json:"Iban"`
 	WalletID     string  `json:"WalletId"`
 	IsPrimary    bool    `json:"IsPrimary"`
@@ -72,7 +72,7 @@ type GetWalletsResponse struct {
 	CurrencyCode int     `json:"CurrencyCode"`
 }
 
-func (c Client) RetrieveWallet() (*GetWalletsResponse, error) {
+func (c Client) RetrieveWallet() (*GetWalletResponse, error) {
 	auth := AuthBody(c.Config)
 
 	uri := getWalletsUri(c.Config)
@@ -95,7 +95,7 @@ func (c Client) RetrieveWallet() (*GetWalletsResponse, error) {
 		return nil, bodyErr
 	}
 
-	r := &GetWalletsResponse{}
+	r := &GetWalletResponse{}
 	if jsonErr := json.Unmarshal(body, r); jsonErr != nil {
 		return nil, jsonErr
 	}

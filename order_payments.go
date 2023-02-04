@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-type CheckoutOrderRequest struct {
+type CheckoutOrder struct {
 	Amount               int64  `json:"amount"`
 	CustomerTransactions string `json:"customerTrns"`
 	Customer             struct {
@@ -32,14 +32,14 @@ type CheckoutOrderRequest struct {
 	CardTokens           []string `json:"cardTokens,omitempty"`
 }
 
-type CheckoutResponse struct {
+type CheckoutOrderResponse struct {
 	OrderCode int64 `json:"orderCode"`
 }
 
 // CreateOrderPayment creates a new order payment and returns the `orderCode`.
-func (c Client) CreateOrderPayment(order CheckoutOrderRequest) (*CheckoutResponse, error) {
+func (c Client) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
 	uri := checkoutEndpoint(c.Config)
-	data, err := json.Marshal(order)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse order %s", err)
 	}
@@ -68,7 +68,7 @@ func (c Client) CreateOrderPayment(order CheckoutOrderRequest) (*CheckoutRespons
 		return nil, bodyErr
 	}
 
-	response := &CheckoutResponse{}
+	response := &CheckoutOrderResponse{}
 	if jsonErr := json.Unmarshal(body, response); jsonErr != nil {
 		return nil, jsonErr
 	}
