@@ -11,9 +11,10 @@ func main() {
 	clientSecret := "ODX4vwQVmeYo373814yYf2p6Vq85yR"
 	merchantID := "393969b6-c18e-4770-ba9a-2838c2beafee"
 	apiKey := "YZ}z>_"
-	client := vivawallet.New(clientID, clientSecret, merchantID, apiKey, true)
+	oauthClient := vivawallet.NewOAuth(clientID, clientSecret, true)
+	basicAuthClient := vivawallet.NewBasicAuth(merchantID, apiKey, true)
 
-	token, err := client.Authenticate()
+	token, err := oauthClient.Authenticate()
 	if err != nil {
 		fmt.Printf("Error: %s\n", err.Error())
 		return
@@ -23,14 +24,14 @@ func main() {
 	req := vivawallet.CheckoutOrder{
 		Amount: 1000,
 	}
-	op, err2 := client.CreateOrderPayment(req)
+	op, err2 := oauthClient.CreateOrderPayment(req)
 	if err2 != nil {
 		fmt.Printf("err: %s\n", err2.Error())
 	} else {
 		fmt.Printf("OrderPayment: %d\n", op.OrderCode)
 	}
 
-	wallets, err3 := client.GetWallets()
+	wallets, err3 := basicAuthClient.GetWallets()
 	if err3 != nil {
 		fmt.Printf("err: %s\n", err3.Error())
 	} else {

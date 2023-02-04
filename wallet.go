@@ -23,7 +23,7 @@ type BalanceTransferResponse struct {
 	CreditTransactionID string `json:"CreditTransactionId"`
 }
 
-func (c Client) BalanceTranfer(walletID string, targetWalletID string, payload BalanceTransfer) (*BalanceTransferResponse, error) {
+func (c BasicAuthClient) BalanceTranfer(walletID string, targetWalletID string, payload BalanceTransfer) (*BalanceTransferResponse, error) {
 	auth := BasicAuth(c.Config)
 
 	uri := getBalanceTransferUri(c.Config, walletID, targetWalletID)
@@ -72,7 +72,7 @@ type Wallet struct {
 	CurrencyCode string  `json:"CurrencyCode"`
 }
 
-func (c Client) GetWallets() ([]Wallet, error) {
+func (c BasicAuthClient) GetWallets() ([]Wallet, error) {
 	auth := BasicAuth(c.Config)
 
 	uri := getWalletsUri(c.Config)

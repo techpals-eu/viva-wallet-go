@@ -21,7 +21,7 @@ type TokenResponse struct {
 // Authenticate retrieves the access token to continue making requests to Viva's API. It
 // returns the full response of the API and stores the token and expiration time for
 // later use.
-func (c Client) Authenticate() (*TokenResponse, error) {
+func (c OAuthClient) Authenticate() (*TokenResponse, error) {
 	uri := c.tokenEndpoint()
 	auth := AuthBody(c.Config)
 
@@ -56,7 +56,7 @@ func (c Client) Authenticate() (*TokenResponse, error) {
 }
 
 // AuthToken returns the token value
-func (c Client) AuthToken() string {
+func (c OAuthClient) AuthToken() string {
 	c.lock.RLock()
 
 	t := c.tokenValue.value
@@ -66,7 +66,7 @@ func (c Client) AuthToken() string {
 }
 
 // SetToken sets the token value and the expiration time of the token.
-func (c Client) SetToken(value string, expires time.Time) {
+func (c OAuthClient) SetToken(value string, expires time.Time) {
 	c.lock.Lock()
 
 	c.tokenValue.value = value
@@ -77,7 +77,7 @@ func (c Client) SetToken(value string, expires time.Time) {
 
 // HasAuthExpired returns true if the expiry time of the token has passed and false
 // otherwise.
-func (c Client) HasAuthExpired() bool {
+func (c OAuthClient) HasAuthExpired() bool {
 	c.lock.RLock()
 
 	expires := c.tokenValue.expires
@@ -98,11 +98,11 @@ func BasicAuth(c Config) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func (c Client) tokenEndpoint() string {
+func (c OAuthClient) tokenEndpoint() string {
 	return fmt.Sprintf("%s/%s", c.authUri(), "/connect/token")
 }
 
-func (c Client) authUri() string {
+func (c OAuthClient) authUri() string {
 	if isDemo(c.Config) {
 		return "https://demo-accounts.vivapayments.com"
 	}

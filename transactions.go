@@ -31,7 +31,7 @@ type TransactionResponse struct {
 	DigitalWalletID     int       `json:"digitalWalletId"`
 }
 
-func (c Client) GetTransaction(trxID string) (*TransactionResponse, error) {
+func (c OAuthClient) GetTransaction(trxID string) (*TransactionResponse, error) {
 	uri := getTransactionUri(c.Config, trxID)
 
 	// TODO: use RoundTripper to avoid rewriting this
@@ -78,7 +78,7 @@ type CardTokenResponse struct {
 	Token string `json:"token"`
 }
 
-func (c Client) CreateCardToken(payload CreateCardToken) (*CardTokenResponse, error) {
+func (c OAuthClient) CreateCardToken(payload CreateCardToken) (*CardTokenResponse, error) {
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
 		_, authErr := c.Authenticate()

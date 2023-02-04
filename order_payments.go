@@ -37,7 +37,7 @@ type CheckoutOrderResponse struct {
 }
 
 // CreateOrderPayment creates a new order payment and returns the `orderCode`.
-func (c Client) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
+func (c OAuthClient) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
 	uri := checkoutOrderUri(c.Config)
 	data, err := json.Marshal(payload)
 	if err != nil {
