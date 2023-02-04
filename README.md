@@ -9,5 +9,8 @@ viva-wallet is an SDK for connecting to the payment provider Viva Wallet.
 - [Transactions](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions)
   - [Retrieve transaction](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions/paths/~1checkout~1v2~1transactions~1{transactionId}/get)
   - [Created card token](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions/paths/~1acquiring~1v1~1cards~1tokens/post)
+- [Wallet](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Balance-Transfer)
+  - [Balance Tranfer](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Balance-Transfer)
+  - [Retrieve Wallets](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Retrieve-Wallet)
 
 
