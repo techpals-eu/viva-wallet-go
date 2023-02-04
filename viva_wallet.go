@@ -10,6 +10,8 @@ type Config struct {
 	Demo         bool
 	ClientID     string
 	ClientSecret string
+	MerchantID   string
+	APIKey       string
 }
 
 type token struct {
@@ -20,8 +22,8 @@ type token struct {
 type Client struct {
 	Config     Config
 	HTTPClient *http.Client
-	lock       *sync.RWMutex
-	tokenValue token
+	lock       sync.RWMutex
+	tokenValue *token
 }
 
 // defaultHTTPTimeout is the default timeout on the http.Client used by the library.
@@ -32,14 +34,17 @@ var httpClient = &http.Client{
 }
 
 // New creates a new viva client
-func New(clientID string, clientSecret string, demo bool) *Client {
+func New(clientID string, clientSecret string, merchantID string, apiKey string, demo bool) *Client {
 	return &Client{
 		Config: Config{
 			Demo:         demo,
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
+			MerchantID:   merchantID,
+			APIKey:       apiKey,
 		},
 		HTTPClient: httpClient,
+		tokenValue: &token{},
 	}
 }
 

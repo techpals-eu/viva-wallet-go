@@ -7,20 +7,36 @@ import (
 )
 
 func main() {
-	clientID := ""
-	clientSecret := ""
-	client := vivawallet.New(clientID, clientSecret, true)
+	clientID := "yjp82d6eub7hva6y9usesqtuzd8ambj914odu50n49jz3.apps.vivapayments.com"
+	clientSecret := "ODX4vwQVmeYo373814yYf2p6Vq85yR"
+	merchantID := "393969b6-c18e-4770-ba9a-2838c2beafee"
+	apiKey := "YZ}z>_"
+	client := vivawallet.New(clientID, clientSecret, merchantID, apiKey, true)
 
 	token, err := client.Authenticate()
 	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
+		fmt.Printf("Error: %s\n", err.Error())
 		return
 	}
-	fmt.Printf("Token: %s\n", token.AccessToken)
+	fmt.Printf("Token: %s\n\n", token.AccessToken)
 
-	req := vivawallet.CheckoutOrderRequest{
+	req := vivawallet.CheckoutOrder{
 		Amount: 1000,
 	}
-	op, _ := client.CreateOrderPayment(req)
-	fmt.Printf("OrderPayment: %d\n", op.OrderCode)
+	op, err2 := client.CreateOrderPayment(req)
+	if err2 != nil {
+		fmt.Printf("err: %s\n", err2.Error())
+	} else {
+		fmt.Printf("OrderPayment: %d\n", op.OrderCode)
+	}
+
+	wallets, err3 := client.GetWallets()
+	if err3 != nil {
+		fmt.Printf("err: %s\n", err3.Error())
+	} else {
+		for _, w := range wallets {
+			fmt.Printf("Wallet: %v\n", w)
+		}
+	}
+
 }

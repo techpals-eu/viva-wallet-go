@@ -58,36 +58,43 @@ func (c Client) Authenticate() (*TokenResponse, error) {
 // AuthToken returns the token value
 func (c Client) AuthToken() string {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
 
 	t := c.tokenValue.value
+
+	c.lock.RUnlock()
 	return t
 }
 
 // SetToken sets the token value and the expiration time of the token.
-func (c Client) SetToken(tokenValue string, expires time.Time) {
+func (c Client) SetToken(value string, expires time.Time) {
 	c.lock.Lock()
-	defer c.lock.Unlock()
 
-	c.tokenValue = token{
-		value:   tokenValue,
-		expires: expires,
-	}
+	c.tokenValue.value = value
+	c.tokenValue.expires = expires
+
+	c.lock.Unlock()
 }
 
 // HasAuthExpired returns true if the expiry time of the token has passed and false
 // otherwise.
 func (c Client) HasAuthExpired() bool {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
 
 	expires := c.tokenValue.expires
+
+	c.lock.RUnlock()
+
 	now := time.Now()
 	return now.After(expires)
 }
 
 func AuthBody(c Config) string {
 	auth := fmt.Sprintf("%s:%s", c.ClientID, c.ClientSecret)
+	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func BasicAuth(c Config) string {
+	auth := fmt.Sprintf("%s:%s", c.MerchantID, c.APIKey)
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
@@ -101,5 +108,3 @@ func (c Client) authUri() string {
 	}
 	return "https://accounts.vivapayments.com"
 }
-
-
