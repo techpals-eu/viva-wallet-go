@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type Transaction struct {
+type TransactionResponse struct {
 	Email               string    `json:"email"`
 	Amount              int       `json:"amount"`
 	OrderCode           string    `json:"orderCode"`
@@ -31,7 +31,7 @@ type Transaction struct {
 	DigitalWalletID     int       `json:"digitalWalletId"`
 }
 
-func (c Client) GetTransaction(trxID string) (*Transaction, error) {
+func (c Client) GetTransaction(trxID string) (*TransactionResponse, error) {
 	uri := getTransactionUri(c.Config, trxID)
 
 	// TODO: use RoundTripper to avoid rewriting this
@@ -59,7 +59,7 @@ func (c Client) GetTransaction(trxID string) (*Transaction, error) {
 		return nil, bodyErr
 	}
 
-	trx := &Transaction{}
+	trx := &TransactionResponse{}
 	if jsonErr := json.Unmarshal(body, trx); jsonErr != nil {
 		return nil, jsonErr
 	}
@@ -67,25 +67,25 @@ func (c Client) GetTransaction(trxID string) (*Transaction, error) {
 }
 
 func getTransactionUri(c Config, trxID string) string {
-	return fmt.Sprintf("%s/%s/%s", ApiUri(c), "checkout/v2/transactions", trxID)
+	return fmt.Sprintf("%s/checkout/v2/transactions/%s", ApiUri(c), trxID)
 }
 
 type CreateCardToken struct {
 	TransactionID string `json:"transactionId"`
 }
 
-type CardToken struct {
+type CardTokenResponse struct {
 	Token string `json:"token"`
 }
 
-func (c Client) CreateCardToken(payload CreateCardToken) (*CardToken, error) {
+func (c Client) CreateCardToken(payload CreateCardToken) (*CardTokenResponse, error) {
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
 		_, authErr := c.Authenticate()
 		return nil, fmt.Errorf("authentication error %s", authErr)
 	}
 
-	uri := getCreateCardToken(c.Config)
+	uri := getCreateCardTokenUri(c.Config)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse CreateCardToken %s", err)
@@ -110,13 +110,13 @@ func (c Client) CreateCardToken(payload CreateCardToken) (*CardToken, error) {
 		return nil, bodyErr
 	}
 
-	cardToken := &CardToken{}
+	cardToken := &CardTokenResponse{}
 	if jsonErr := json.Unmarshal(body, cardToken); jsonErr != nil {
 		return nil, jsonErr
 	}
 	return cardToken, nil
 }
 
-func getCreateCardToken(c Config) string {
-	return fmt.Sprintf("%s/%s", ApiUri(c), "acquiring/v1/cards/tokens")
+func getCreateCardTokenUri(c Config) string {
+	return fmt.Sprintf("%s/acquiring/v1/cards/tokens", ApiUri(c))
 }
