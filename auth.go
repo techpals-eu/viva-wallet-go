@@ -23,7 +23,7 @@ type TokenResponse struct {
 // later use.
 func (c Client) Authenticate() (*TokenResponse, error) {
 	uri := c.tokenEndpoint()
-	auth := authBody(c.Config)
+	auth := AuthBody(c.Config)
 
 	grant := []byte("grant_type=client_credentials")
 	req, _ := http.NewRequest("POST", uri, bytes.NewBuffer(grant))
@@ -86,7 +86,7 @@ func (c Client) HasAuthExpired() bool {
 	return now.After(expires)
 }
 
-func authBody(c Config) string {
+func AuthBody(c Config) string {
 	auth := fmt.Sprintf("%s:%s", c.ClientID, c.ClientSecret)
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
@@ -102,33 +102,4 @@ func (c Client) authUri() string {
 	return "https://accounts.vivapayments.com"
 }
 
-type OAuthRoundTripper struct {
-	tokenValue token
-	transport  http.RoundTripper
-}
 
-func (c OAuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	authType := pickAuth(req)
-	fmt.Println(authType)
-
-	resp, err := c.transport.RoundTrip(req)
-	if resp != nil && err == nil {
-		return resp, nil
-	}
-	return nil, err
-}
-
-type AuthType int
-const (
-	oauth AuthType = iota
-	basicAuth
-)
-
-func pickAuth(r *http.Request) AuthType {
-	switch r.RequestURI {
-	case "/":
-		return oauth
-	default:
-		return basicAuth
-	}
-}
