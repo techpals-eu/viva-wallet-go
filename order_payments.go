@@ -35,6 +35,7 @@ type CheckoutOrderResponse struct {
 }
 
 // CreateOrderPayment creates a new order payment and returns the `orderCode`.
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Payments/paths/~1checkout~1v2~1orders/post
 func (c OAuthClient) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
 	// Check if auth expired and if so authenticate again
 	if c.HasAuthExpired() {

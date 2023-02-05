@@ -46,4 +46,14 @@ func main() {
 	} else {
 		fmt.Printf("Trx: %v\n", trx)
 	}
+
+	createCardToken := vivawallet.CreateCardToken{
+		TransactionID: "a9531058-f0f7-44ff-a718-98920804ceab",
+	}
+	cardToken, err5 := oauthClient.CreateCardToken(createCardToken)
+	if err5 != nil {
+		fmt.Printf("err: %s\n", err5.Error())
+	} else {
+		fmt.Printf("Card token: %v\n", cardToken)
+	}
 }
