@@ -23,11 +23,10 @@ type TokenResponse struct {
 // later use.
 func (c OAuthClient) Authenticate() (*TokenResponse, error) {
 	uri := c.tokenEndpoint()
-	auth := AuthBody(c.Config)
 
 	grant := []byte("grant_type=client_credentials")
 	req, _ := http.NewRequest("POST", uri, bytes.NewBuffer(grant))
-	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+	req.SetBasicAuth(c.Config.ClientID, c.Config.ClientSecret)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, httpErr := c.HTTPClient.Do(req)

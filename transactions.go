@@ -40,15 +40,12 @@ func (c OAuthClient) GetTransaction(trxID string) (*TransactionResponse, error) 
 
 	uri := getTransactionUri(c.Config, trxID)
 
-	body, bodyErr := c.get(uri)
-	if bodyErr != nil {
-		return nil, bodyErr
+	trx := &TransactionResponse{}
+	reqErr := c.Get(uri, &trx)
+	if reqErr != nil {
+		return nil, reqErr
 	}
 
-	trx := &TransactionResponse{}
-	if jsonErr := json.Unmarshal(body, trx); jsonErr != nil {
-		return nil, jsonErr
-	}
 	return trx, nil
 }
 
@@ -82,15 +79,12 @@ func (c OAuthClient) CreateCardToken(payload CreateCardToken) (*CardTokenRespons
 		return nil, fmt.Errorf("failed to parse CreateCardToken %s", err)
 	}
 
-	body, bodyErr := c.post(uri, bytes.NewReader(data))
-	if bodyErr != nil {
-		return nil, bodyErr
+	cardToken := &CardTokenResponse{}
+	reqErr := c.Post(uri, bytes.NewReader(data), &cardToken)
+	if reqErr != nil {
+		return nil, reqErr
 	}
 
-	cardToken := &CardTokenResponse{}
-	if jsonErr := json.Unmarshal(body, cardToken); jsonErr != nil {
-		return nil, jsonErr
-	}
 	return cardToken, nil
 }
 
