@@ -22,11 +22,11 @@ jobs:
      strategy:
        matrix:
          go:
+           - "1.20"
            - "1.19"
            - "1.18"
            - "1.17"
            - "1.16"
-           - "1.15"
      name: "Build: go v${{ matrix.go }}"
      steps:
        - uses: actions/checkout@v2
