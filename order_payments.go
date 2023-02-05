@@ -49,14 +49,10 @@ func (c OAuthClient) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderRe
 		return nil, fmt.Errorf("failed to parse order %s", err)
 	}
 
-	body, bodyErr := c.post(uri, bytes.NewReader(data))
-	if bodyErr != nil {
-		return nil, bodyErr
-	}
-
 	response := &CheckoutOrderResponse{}
-	if jsonErr := json.Unmarshal(body, response); jsonErr != nil {
-		return nil, jsonErr
+	reqErr := c.Post(uri, bytes.NewReader(data), &response)
+	if reqErr != nil {
+		return nil, reqErr
 	}
 
 	return response, nil
@@ -64,4 +60,32 @@ func (c OAuthClient) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderRe
 
 func checkoutOrderUri(c Config) string {
 	return fmt.Sprintf("%s/checkout/v2/orders", ApiUri(c))
+}
+
+type UpdateOrderPayment struct {
+	Amount           int64  `json:"amount"`
+	DisablePaidState bool   `json:"disablePaidState,omitempty"`
+	ExpirationDate   string `json:"expirationDate,omitempty"`
+	IsCancelled      bool   `json:"isCancelled,omitempty"`
+}
+
+// UpdareOrderPayment updates a new order payment.
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Payments-(Deprecated)/paths/~1api~1orders~1{orderCode}/patch
+func (c BasicAuthClient) UpdateOrderPayment(orderCode int64, payload UpdateOrderPayment) error {
+	uri := updateOrderUri(c.Config, orderCode)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to parse order %s", err)
+	}
+
+	reqErr := c.Patch(uri, bytes.NewReader(data))
+	if reqErr != nil {
+		return reqErr
+	}
+
+	return nil
+}
+
+func updateOrderUri(c Config, orderCode int64) string {
+	return fmt.Sprintf("%s/api/orders/%d", AppUri(c), orderCode)
 }

@@ -31,14 +31,10 @@ func (c BasicAuthClient) BalanceTranfer(walletID string, targetWalletID string, 
 		return nil, fmt.Errorf("failed to parse BalanceTransfer %s", err)
 	}
 
-	body, bodyErr := c.post(uri, bytes.NewReader(data))
-	if bodyErr != nil {
-		return nil, bodyErr
-	}
-
 	b := &BalanceTransferResponse{}
-	if jsonErr := json.Unmarshal(body, b); jsonErr != nil {
-		return nil, jsonErr
+	reqErr := c.Post(uri, bytes.NewReader(data), &b)
+	if reqErr != nil {
+		return nil, reqErr
 	}
 	return b, nil
 }
@@ -63,14 +59,10 @@ type Wallet struct {
 func (c BasicAuthClient) GetWallets() ([]Wallet, error) {
 	uri := getWalletsUri(c.Config)
 
-	body, bodyErr := c.get(uri)
-	if bodyErr != nil {
-		return nil, bodyErr
-	}
-
 	var r []Wallet
-	if jsonErr := json.Unmarshal(body, &r); jsonErr != nil {
-		return nil, jsonErr
+	err := c.Get(uri, &r)
+	if err != nil {
+			return nil, err
 	}
 	return r, nil
 }
