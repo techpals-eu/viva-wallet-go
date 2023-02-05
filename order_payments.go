@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 )
 
 type CheckoutOrder struct {
@@ -38,32 +36,19 @@ type CheckoutOrderResponse struct {
 
 // CreateOrderPayment creates a new order payment and returns the `orderCode`.
 func (c OAuthClient) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
-	uri := checkoutOrderUri(c.Config)
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse order %s", err)
-	}
-
 	// Check if auth expired and if so authenticate again
 	if c.HasAuthExpired() {
 		_, authErr := c.Authenticate()
 		return nil, fmt.Errorf("authentication error %s", authErr)
 	}
 
-	req, _ := http.NewRequest("POST", uri, bytes.NewReader(data))
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.AuthToken()))
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, httpErr := c.HTTPClient.Do(req)
-	if httpErr != nil {
-		return nil, fmt.Errorf("failed to parse order %s", httpErr)
+	uri := checkoutOrderUri(c.Config)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse order %s", err)
 	}
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to make order %d", resp.StatusCode)
-	}
-
-	body, bodyErr := io.ReadAll(resp.Body)
+	body, bodyErr := c.post(uri, bytes.NewReader(data))
 	if bodyErr != nil {
 		return nil, bodyErr
 	}

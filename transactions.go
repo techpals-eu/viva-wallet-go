@@ -4,20 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 )
 
 type TransactionResponse struct {
 	Email               string    `json:"email"`
-	Amount              int       `json:"amount"`
-	OrderCode           string    `json:"orderCode"`
+	Amount              float64   `json:"amount"`
+	OrderCode           int       `json:"orderCode"`
 	StatusID            string    `json:"statusId"`
 	FullName            string    `json:"fullName"`
 	InsDate             time.Time `json:"insDate"`
 	CardNumber          string    `json:"cardNumber"`
-	CurrencyCode        int       `json:"currencyCode"`
+	CurrencyCode        string    `json:"currencyCode"`
 	CustomerTrns        string    `json:"customerTrns"`
 	MerchantTrns        string    `json:"merchantTrns"`
 	TransactionTypeID   int       `json:"transactionTypeId"`
@@ -32,29 +30,15 @@ type TransactionResponse struct {
 }
 
 func (c OAuthClient) GetTransaction(trxID string) (*TransactionResponse, error) {
-	uri := getTransactionUri(c.Config, trxID)
-
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
 		_, authErr := c.Authenticate()
 		return nil, fmt.Errorf("authentication error %s", authErr)
 	}
 
-	req, _ := http.NewRequest("GET", uri, nil)
-	// TODO: use RoundTripper
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.AuthToken()))
-	req.Header.Add("Content-Type", "application/json")
+	uri := getTransactionUri(c.Config, trxID)
 
-	resp, httpErr := c.HTTPClient.Do(req)
-	if httpErr != nil {
-		return nil, fmt.Errorf("failed to fetch transaction %s", httpErr)
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to fetch transaction with status %d", resp.StatusCode)
-	}
-
-	body, bodyErr := io.ReadAll(resp.Body)
+	body, bodyErr := c.get(uri)
 	if bodyErr != nil {
 		return nil, bodyErr
 	}
@@ -91,21 +75,7 @@ func (c OAuthClient) CreateCardToken(payload CreateCardToken) (*CardTokenRespons
 		return nil, fmt.Errorf("failed to parse CreateCardToken %s", err)
 	}
 
-	req, _ := http.NewRequest("POST", uri, bytes.NewReader(data))
-	// TODO: use RoundTripper
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.AuthToken()))
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, httpErr := c.HTTPClient.Do(req)
-	if httpErr != nil {
-		return nil, fmt.Errorf("failed to create card token %s", httpErr)
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to create card token with status %d", resp.StatusCode)
-	}
-
-	body, bodyErr := io.ReadAll(resp.Body)
+	body, bodyErr := c.post(uri, bytes.NewReader(data))
 	if bodyErr != nil {
 		return nil, bodyErr
 	}

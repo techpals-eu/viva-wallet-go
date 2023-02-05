@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 )
 
 func getBalanceTransferUri(c Config, walletID string, targetWalletID string) string {
@@ -24,7 +22,6 @@ type BalanceTransferResponse struct {
 }
 
 func (c BasicAuthClient) BalanceTranfer(walletID string, targetWalletID string, payload BalanceTransfer) (*BalanceTransferResponse, error) {
-	auth := BasicAuth(c.Config)
 
 	uri := getBalanceTransferUri(c.Config, walletID, targetWalletID)
 	data, err := json.Marshal(payload)
@@ -32,20 +29,7 @@ func (c BasicAuthClient) BalanceTranfer(walletID string, targetWalletID string, 
 		return nil, fmt.Errorf("failed to parse BalanceTransfer %s", err)
 	}
 
-	req, _ := http.NewRequest("POST", uri, bytes.NewReader(data))
-	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, httpErr := c.HTTPClient.Do(req)
-	if httpErr != nil {
-		return nil, fmt.Errorf("failed to tranfer money %s", httpErr)
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to tranfer money with status %d", resp.StatusCode)
-	}
-
-	body, bodyErr := io.ReadAll(resp.Body)
+	body, bodyErr := c.post(uri, bytes.NewReader(data))
 	if bodyErr != nil {
 		return nil, bodyErr
 	}
@@ -73,24 +57,9 @@ type Wallet struct {
 }
 
 func (c BasicAuthClient) GetWallets() ([]Wallet, error) {
-	auth := BasicAuth(c.Config)
-
 	uri := getWalletsUri(c.Config)
 
-	req, _ := http.NewRequest("GET", uri, nil)
-	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, httpErr := c.HTTPClient.Do(req)
-	if httpErr != nil {
-		return nil, fmt.Errorf("failed to get wallet %s", httpErr)
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to get wallet with status %d", resp.StatusCode)
-	}
-
-	body, bodyErr := io.ReadAll(resp.Body)
+	body, bodyErr := c.get(uri)
 	if bodyErr != nil {
 		return nil, bodyErr
 	}

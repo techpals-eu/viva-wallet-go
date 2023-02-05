@@ -40,4 +40,10 @@ func main() {
 		}
 	}
 
+	trx, err4 := oauthClient.GetTransaction("a9531058-f0f7-44ff-a718-98920804ceab")
+	if err4 != nil {
+		fmt.Printf("err: %s\n", err4.Error())
+	} else {
+		fmt.Printf("Trx: %v\n", trx)
+	}
 }

@@ -39,6 +39,7 @@ func (c OAuthClient) Authenticate() (*TokenResponse, error) {
 		return nil, errors.New("non successful response")
 	}
 
+	defer resp.Body.Close()
 	body, bodyErr := io.ReadAll(resp.Body)
 	if bodyErr != nil {
 		return nil, bodyErr
