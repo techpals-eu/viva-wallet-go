@@ -21,6 +21,8 @@ type BalanceTransferResponse struct {
 	CreditTransactionID string `json:"CreditTransactionId"`
 }
 
+// BalanceTransfer transfers money from one wallet to another.
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Balance-Transfer/paths/~1api~1wallets~1{walletId}~1balancetransfer~1{targetWalletId}/post
 func (c BasicAuthClient) BalanceTranfer(walletID string, targetWalletID string, payload BalanceTransfer) (*BalanceTransferResponse, error) {
 
 	uri := getBalanceTransferUri(c.Config, walletID, targetWalletID)
@@ -56,6 +58,8 @@ type Wallet struct {
 	CurrencyCode string  `json:"CurrencyCode"`
 }
 
+// GetWallets fetches a list of wallets associated to your account.
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Retrieve-Wallet/paths/~1api~1wallets/get
 func (c BasicAuthClient) GetWallets() ([]Wallet, error) {
 	uri := getWalletsUri(c.Config)
 

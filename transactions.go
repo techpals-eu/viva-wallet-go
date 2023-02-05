@@ -29,6 +29,8 @@ type TransactionResponse struct {
 	DigitalWalletID     int       `json:"digitalWalletId"`
 }
 
+// GetTransaction fetches a transaction given an ID.
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions/paths/~1checkout~1v2~1transactions~1{transactionId}/get
 func (c OAuthClient) GetTransaction(trxID string) (*TransactionResponse, error) {
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
@@ -62,6 +64,11 @@ type CardTokenResponse struct {
 	Token string `json:"token"`
 }
 
+// CreateCardToken creates card tokens based on a transactionID.
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions/paths/~1acquiring~1v1~1cards~1tokens/post
+//
+// > This feature is available only upon request. Please contact your sales representative or use our Live Chat to request this feature.
+//
 func (c OAuthClient) CreateCardToken(payload CreateCardToken) (*CardTokenResponse, error) {
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
