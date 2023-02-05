@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - feat/**
+      - feature/**
+  pull_request:
+    branches:
+      - master
+      - feat/**
+      - feature/**
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: lint
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest &&
+          $HOME/go/bin/staticcheck &&
+          make vet
+
+  build:
+     runs-on: ubuntu-latest
+     strategy:
+       matrix:
+         go:
+           - "1.19"
+           - "1.18"
+           - "1.17"
+           - "1.16"
+           - "1.15"
+     name: "Build: go v${{ matrix.go }}"
+     steps:
+       - uses: actions/checkout@v2
+       - name: Setup go
+         uses: actions/setup-go@v1
+         with:
+           go-version: ${{ matrix.go }}
+       - name: Build
+         run: make build-example
