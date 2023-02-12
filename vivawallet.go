@@ -22,21 +22,27 @@ type token struct {
 
 type OAuthClient struct {
 	Config     Config
-	HTTPClient *http.Client
+	Client     *http.Client
 	lock       *sync.RWMutex
 	tokenValue *token
 }
 
 type BasicAuthClient struct {
-	Config     Config
-	HTTPClient *http.Client
+	Config Config
+	Client *http.Client
 }
 
 // defaultHTTPTimeout is the default timeout on the http.Client used by the library.
 const defaultTimeout = 60 * time.Second
 
-var httpClient = &http.Client{
-	Timeout: defaultTimeout,
+var (
+	httpClient *http.Client
+)
+
+func init() {
+	httpClient = &http.Client{
+		Timeout: defaultTimeout,
+	}
 }
 
 type Client interface {

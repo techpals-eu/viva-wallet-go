@@ -23,54 +23,54 @@ func main() {
 	}
 	fmt.Printf("Token: %s\n\n", token.AccessToken)
 
-	fmt.Println("\nCreate order\n")
+	fmt.Printf("\nCreate order\n")
 	req := vivawallet.CheckoutOrder{
 		Amount: 1000,
 	}
 	op, err2 := oauthClient.CreateOrderPayment(req)
 	if err2 != nil {
-		fmt.Printf("err: %s\n", err2.Error())
+		fmt.Printf("\nerr: %s\n", err2.Error())
 	} else {
-		fmt.Printf("OrderPayment: %d\n", op.OrderCode)
+		fmt.Printf("\nOrderPayment: %d\n", op.OrderCode)
 	}
 
-	fmt.Println("\nGet wallets")
+	fmt.Printf("\nGet wallets\n")
 	wallets, err3 := basicAuthClient.GetWallets()
 	if err3 != nil {
-		fmt.Printf("err: %s\n", err3.Error())
+		fmt.Printf("\nerr: %s\n", err3.Error())
 	} else {
 		for _, w := range wallets {
-			fmt.Printf("Wallet: %v\n", w)
+			fmt.Printf("\nWallet: %v\n", w)
 		}
 	}
 
-	fmt.Println("\nGet transaction")
+	fmt.Printf("\nGet transaction\n")
 	trx, err4 := oauthClient.GetTransaction("a9531058-f0f7-44ff-a718-98920804ceab")
 	if err4 != nil {
-		fmt.Printf("err: %s\n", err4.Error())
+		fmt.Printf("\nerr: %s\n", err4.Error())
 	} else {
-		fmt.Printf("Trx: %v\n", trx)
+		fmt.Printf("\nTrx: %v\n", trx)
 	}
 
-	fmt.Println("\nCreate card token")
+	fmt.Printf("\nCreate card token\n")
 	createCardToken := vivawallet.CreateCardToken{
 		TransactionID: "a9531058-f0f7-44ff-a718-98920804ceab",
 	}
 	cardToken, err5 := oauthClient.CreateCardToken(createCardToken)
 	if err5 != nil {
-		fmt.Printf("err: %s\n", err5.Error())
+		fmt.Printf("\nerr: %s\n", err5.Error())
 	} else {
-		fmt.Printf("Card token: %v\n", cardToken)
+		fmt.Printf("\nCard token: %v\n", cardToken)
 	}
 
-	fmt.Println("\nUpdate orderpayment")
+	fmt.Printf("\nUpdate orderpayment\n")
 	update := vivawallet.UpdateOrderPayment{
 		Amount: 1200,
 	}
 	err6 := basicAuthClient.UpdateOrderPayment(op.OrderCode, update)
 	if err6 != nil {
-		fmt.Printf("err: %s\n", err6.Error())
+		fmt.Printf("\nerr: %s\n", err6.Error())
 	} else {
-		fmt.Printf("success\n")
+		fmt.Println("\nsuccess")
 	}
 }

@@ -16,7 +16,7 @@ func NewBasicAuth(merchantID string, apiKey string, demo bool) *BasicAuthClient 
 			MerchantID: merchantID,
 			APIKey:     apiKey,
 		},
-		HTTPClient: httpClient,
+		Client: httpClient,
 	}
 }
 
@@ -54,7 +54,7 @@ func (c BasicAuthClient) performReq(req *http.Request) ([]byte, error) {
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(c.Config.MerchantID, c.Config.APIKey)
 
-	resp, httpErr := c.HTTPClient.Do(req)
+	resp, httpErr := c.Client.Do(req)
 	if httpErr != nil {
 		return nil, fmt.Errorf("failed to perform request %s", httpErr)
 	}
