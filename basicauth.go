@@ -50,6 +50,16 @@ func (c BasicAuthClient) Patch(uri string, reader *bytes.Reader) error {
 	return nil
 }
 
+func (c BasicAuthClient) Delete(uri string, reader *bytes.Reader, v interface{}) error {
+	req, _ := http.NewRequest("DELETE", uri, reader)
+	body, reqErr := c.performReq(req)
+	if reqErr != nil {
+		return reqErr
+	}
+
+	return json.Unmarshal(body, v)
+}
+
 func (c BasicAuthClient) performReq(req *http.Request) ([]byte, error) {
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(c.Config.MerchantID, c.Config.APIKey)

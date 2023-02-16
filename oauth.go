@@ -41,6 +41,11 @@ func (c OAuthClient) Patch(uri string, reader *bytes.Reader, v interface{}) erro
 	return c.performReq(req, v)
 }
 
+func (c OAuthClient) Delete(uri string, reader *bytes.Reader, v interface{}) error {
+	req, _ := http.NewRequest("DELETE", uri, nil)
+	return c.performReq(req, v)
+}
+
 func (c OAuthClient) setBearerToken(req *http.Request) {
 	req.Header.Set("Authorization", "Bearer "+c.AuthToken())
 }

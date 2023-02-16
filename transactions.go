@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type TransactionResponse struct {
+type GetTransactionResponse struct {
 	Email               string    `json:"email"`
 	Amount              float64   `json:"amount"`
 	OrderCode           int       `json:"orderCode"`
@@ -31,7 +31,7 @@ type TransactionResponse struct {
 
 // GetTransaction fetches a transaction given an ID.
 // Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions/paths/~1checkout~1v2~1transactions~1{transactionId}/get
-func (c OAuthClient) GetTransaction(trxID string) (*TransactionResponse, error) {
+func (c OAuthClient) GetTransaction(trxID string) (*GetTransactionResponse, error) {
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
 		_, authErr := c.Authenticate()
@@ -40,7 +40,7 @@ func (c OAuthClient) GetTransaction(trxID string) (*TransactionResponse, error) 
 
 	uri := getTransactionUri(c.Config, trxID)
 
-	trx := &TransactionResponse{}
+	trx := &GetTransactionResponse{}
 	reqErr := c.Get(uri, &trx)
 	if reqErr != nil {
 		return nil, reqErr
@@ -53,41 +53,105 @@ func getTransactionUri(c Config, trxID string) string {
 	return fmt.Sprintf("%s/checkout/v2/transactions/%s", ApiUri(c), trxID)
 }
 
-type CreateCardToken struct {
-	TransactionID string `json:"transactionId"`
+type CreateTransaction struct {
+	Amount       int64  `json:"amount"`
+	Installments int    `json:"installments,omitempty"`
+	CustomerTrnx string `json:"customerTrns,omitempty"`
+	MerchantTrns string `json:"merchantTrns,omitempty"`
+	SourceCode   int    `json:"sourceCode"`
+	TipAmount    int    `json:"tipAmount"`
 }
 
-type CardTokenResponse struct {
-	Token string `json:"token"`
+type TransactionResponse struct {
+	Emv                      *string   `json:"Emv"`
+	Amount                   int       `json:"Amount"`
+	StatusID                 string    `json:"StatusId"`
+	CurrencyCode             int       `json:"CurrencyCode"`
+	TransactionID            string    `json:"TransactionId"`
+	ReferenceNumber          int       `json:"ReferenceNumber"`
+	AuthorizationID          int       `json:"AuthorizationId"`
+	RetrievalReferenceNumber int       `json:"RetrievalReferenceNumber"`
+	ThreeDSecureStatusID     int       `json:"ThreeDSecureStatusId"`
+	ErrorCode                int       `json:"ErrorCode"`
+	ErrorText                string    `json:"ErrorText"`
+	Timestamp                time.Time `json:"TimeStamp"`
+	CorrelationID            *string   `json:"CorrelationId"`
+	EventID                  int       `json:"EventId"`
+	Success                  bool      `json:"Success"`
 }
 
-// CreateCardToken creates card tokens based on a transactionID.
-// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions/paths/~1acquiring~1v1~1cards~1tokens/post
-//
-// > This feature is available only upon request. Please contact your sales representative or use our Live Chat to request this feature.
-//
-func (c OAuthClient) CreateCardToken(payload CreateCardToken) (*CardTokenResponse, error) {
-	// TODO: use RoundTripper to avoid rewriting this
-	if c.HasAuthExpired() {
-		_, authErr := c.Authenticate()
-		return nil, fmt.Errorf("authentication error %s", authErr)
-	}
-
-	uri := getCreateCardTokenUri(c.Config)
+// CreateTransaction creates a new transaction for a recurring payment or a pre-auth
+// order payment
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions-(Deprecated)/paths/~1api~1transactions~1{transaction_id}/post
+func (c BasicAuthClient) CreateTransaction(id string, payload CreateTransaction) (*TransactionResponse, error) {
+	uri := getCreateTransactionUri(c.Config, id)
 	data, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse CreateCardToken %s", err)
+		return nil, fmt.Errorf("failed to create transaction %s", err.Error())
 	}
 
-	cardToken := &CardTokenResponse{}
-	reqErr := c.Post(uri, bytes.NewReader(data), &cardToken)
+	trx := &TransactionResponse{}
+	reqErr := c.Post(uri, bytes.NewReader(data), &trx)
+
 	if reqErr != nil {
 		return nil, reqErr
 	}
 
-	return cardToken, nil
+	return trx, nil
 }
 
-func getCreateCardTokenUri(c Config) string {
-	return fmt.Sprintf("%s/acquiring/v1/cards/tokens", ApiUri(c))
+func getCreateTransactionUri(c Config, id string) string {
+	return fmt.Sprintf("%s/api/transactions/%s", AppUri(c), id)
+}
+
+// CancelTransaction cancels a transaction
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions-(Deprecated)/paths/~1api~1transactions~1{transaction_id}/delete
+func (c BasicAuthClient) CancelTransaction(id string, amount int64, sourceCode string) (*TransactionResponse, error) {
+	uri := getCancelTransactionUri(c.Config, id, amount, sourceCode)
+
+	trx := &TransactionResponse{}
+	reqErr := c.Delete(uri, nil, &trx)
+
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	return trx, nil
+}
+
+func getCancelTransactionUri(c Config, id string, amount int64, sourceCode string) string {
+	var sourceParam = ""
+	if sourceCode != "" {
+		sourceParam = "&sourceCode=" + sourceCode
+	}
+
+	return fmt.Sprintf("%s/api/transactions/%s?amount=%d%s", AppUri(c), id, amount, sourceParam)
+}
+
+// CancelPartialAuthorization cancels a partial authorization
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions-(Deprecated)/paths/~1acquiring~1v1~1transactions~1{transactionId}/delete
+func (c OAuthClient) CancelPartialAuthorization(id string, amount int64, sourceCode string) error {
+	if c.HasAuthExpired() {
+		_, authErr := c.Authenticate()
+		return fmt.Errorf("authentication error %s", authErr)
+	}
+	uri := getCancelPartialAuthUri(c.Config, id, amount, sourceCode)
+
+	var response string
+	reqErr := c.Delete(uri, nil, &response)
+	if reqErr != nil {
+		return reqErr
+	}
+
+	return nil
+}
+
+func getCancelPartialAuthUri(c Config, id string, amount int64, sourceCode string) string {
+	var sourceParam = ""
+	if sourceCode != "" {
+		sourceParam = "&sourceCode=" + sourceCode
+	}
+
+	// https://demo-api.vivapayments.com/acquiring/v1/transactions/{transactionId}
+	return fmt.Sprintf("%s/acquiring/v1/transactions/%s?amount=%d%s", ApiUri(c), id, amount, sourceParam)
 }
