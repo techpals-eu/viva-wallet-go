@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 type CheckoutOrder struct {
@@ -87,5 +88,63 @@ func (c BasicAuthClient) UpdateOrderPayment(orderCode int64, payload UpdateOrder
 }
 
 func updateOrderUri(c Config, orderCode int64) string {
+	return fmt.Sprintf("%s/api/orders/%d", AppUri(c), orderCode)
+}
+
+type GetOrderPaymentResponse struct {
+	OrderCode       int64     `json:"OrderCode"`
+	SourceCode      string    `json:"SourceCode"`
+	Tags            []string  `json:"Tags"`
+	TipAmount       int       `json:"TipAmount"`
+	RequestLang     string    `json:"RequestLang"`
+	MerchantTrns    string    `json:"MerchantTrns"`
+	CustomerTrns    string    `json:"CustomerTrns"`
+	MaxInstallments float64   `json:"MaxInstallments"`
+	RequestAmount   float64   `json:"RequestAmount"`
+	ExpirationDate  time.Time `json:"ExpirationDate"`
+	StateID         int       `json:"StateId"`
+}
+
+// GetOrderPayment retrieves an order payment
+// https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Payments-(Deprecated)/paths/~1api~1orders~1{orderCode}/get
+func (c BasicAuthClient) GetOrderPayment(orderCode int64) (*GetOrderPaymentResponse, error) {
+	uri := getOrderPaymentUri(c.Config, orderCode)
+
+	op := &GetOrderPaymentResponse{}
+	reqErr := c.Get(uri, op)
+	if reqErr != nil {
+		return nil, reqErr
+	}
+	return op, nil
+}
+
+func getOrderPaymentUri(c Config, orderCode int64) string {
+	return fmt.Sprintf("%s/api/orders/%d", AppUri(c), orderCode)
+}
+
+type CancelOrderPayment struct {
+	OrderCode     int64     `json:"OrderCode"`
+	ErrorCode     int       `json:"ErrorCode"`
+	ErrorText     string    `json:"ErrorText"`
+	TimeStamp     time.Time `json:"TimeStamp"`
+	CorrelationID string    `json:"CorrelationId"`
+	EventID       int       `json:"EventId"`
+	Success       bool      `json:"Success"`
+}
+
+// CancelOrderPayment cancels an existing order payment
+// Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Payments-(Deprecated)/paths/~1api~1orders~1{orderCode}/delete
+func (c BasicAuthClient) CancelOrderPayment(orderCode int64) (*CancelOrderPayment, error) {
+	uri := deleteOrderPaymentUri(c.Config, orderCode)
+
+	result := &CancelOrderPayment{}
+	reqErr := c.Delete(uri, nil, result)
+	if reqErr != nil {
+		return nil, reqErr
+	}
+	return result, nil
+}
+
+func deleteOrderPaymentUri(c Config, orderCode int64) string {
 	return fmt.Sprintf("%s/api/orders/%d", AppUri(c), orderCode)
 }
