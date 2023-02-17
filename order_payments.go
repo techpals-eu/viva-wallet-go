@@ -92,17 +92,17 @@ func updateOrderUri(c Config, orderCode int64) string {
 }
 
 type GetOrderPaymentResponse struct {
-	OrderCode       int64     `json:"OrderCode"`
-	SourceCode      string    `json:"SourceCode"`
-	Tags            []string  `json:"Tags"`
-	TipAmount       int       `json:"TipAmount"`
-	RequestLang     string    `json:"RequestLang"`
-	MerchantTrns    string    `json:"MerchantTrns"`
-	CustomerTrns    string    `json:"CustomerTrns"`
-	MaxInstallments float64   `json:"MaxInstallments"`
-	RequestAmount   float64   `json:"RequestAmount"`
-	ExpirationDate  time.Time `json:"ExpirationDate"`
-	StateID         int       `json:"StateId"`
+	OrderCode       int64    `json:"OrderCode"`
+	SourceCode      string   `json:"SourceCode"`
+	Tags            []string `json:"Tags"`
+	TipAmount       float64  `json:"TipAmount"`
+	RequestLang     string   `json:"RequestLang"`
+	MerchantTrns    string   `json:"MerchantTrns"`
+	CustomerTrns    string   `json:"CustomerTrns"`
+	MaxInstallments float64  `json:"MaxInstallments"`
+	RequestAmount   float64  `json:"RequestAmount"`
+	ExpirationDate  string   `json:"ExpirationDate"`
+	StateID         int      `json:"StateId"`
 }
 
 // GetOrderPayment retrieves an order payment

@@ -21,7 +21,7 @@ func NewBasicAuth(merchantID string, apiKey string, demo bool) *BasicAuthClient 
 }
 
 func (c BasicAuthClient) Get(uri string, v interface{}) error {
-	req, _ := http.NewRequest("GET", uri, nil)
+	req := newRequest("GET", uri, nil)
 	body, reqErr := c.performReq(req)
 	if reqErr != nil {
 		return reqErr
@@ -31,7 +31,7 @@ func (c BasicAuthClient) Get(uri string, v interface{}) error {
 }
 
 func (c BasicAuthClient) Post(uri string, reader *bytes.Reader, v interface{}) error {
-	req, _ := http.NewRequest("POST", uri, reader)
+	req := newRequest("POST", uri, reader)
 	body, reqErr := c.performReq(req)
 	if reqErr != nil {
 		return reqErr
@@ -41,7 +41,7 @@ func (c BasicAuthClient) Post(uri string, reader *bytes.Reader, v interface{}) e
 }
 
 func (c BasicAuthClient) Patch(uri string, reader *bytes.Reader) error {
-	req, _ := http.NewRequest("PATCH", uri, reader)
+	req := newRequest("PATCH", uri, reader)
 	_, reqErr := c.performReq(req)
 	if reqErr != nil {
 		return reqErr
@@ -51,7 +51,7 @@ func (c BasicAuthClient) Patch(uri string, reader *bytes.Reader) error {
 }
 
 func (c BasicAuthClient) Delete(uri string, reader *bytes.Reader, v interface{}) error {
-	req, _ := http.NewRequest("DELETE", uri, reader)
+	req := newRequest("DELETE", uri, reader)
 	body, reqErr := c.performReq(req)
 	if reqErr != nil {
 		return reqErr
