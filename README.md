@@ -62,3 +62,5 @@ createCardToken := CreateCardToken{
 }
 cardToken, err2 := CreateCardToken(cardToken)
 ```
+
+For more examples check out: [main.go](./example/main.go)
