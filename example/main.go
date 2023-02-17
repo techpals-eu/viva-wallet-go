@@ -62,4 +62,22 @@ func main() {
 	} else {
 		fmt.Println("\nsuccess")
 	}
+
+	fmt.Printf("\nGet orderpayment\n")
+	opGet, err7 := basicAuthClient.GetOrderPayment(op.OrderCode)
+	if err7 != nil {
+		fmt.Printf("\nerr: %s\n", err7.Error())
+	} else {
+		fmt.Printf("%v", opGet)
+		fmt.Println("\nsuccess")
+	}
+
+	fmt.Printf("\nCancel orderpayment\n")
+	opCancel, err8 := basicAuthClient.CancelOrderPayment(op.OrderCode)
+	if err8 != nil {
+		fmt.Printf("\nerr: %s\n", err8.Error())
+	} else {
+		fmt.Printf("%v", opCancel)
+		fmt.Println("\nsuccess")
+	}
 }

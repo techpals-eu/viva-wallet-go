@@ -152,6 +152,5 @@ func getCancelPartialAuthUri(c Config, id string, amount int64, sourceCode strin
 		sourceParam = "&sourceCode=" + sourceCode
 	}
 
-	// https://demo-api.vivapayments.com/acquiring/v1/transactions/{transactionId}
 	return fmt.Sprintf("%s/acquiring/v1/transactions/%s?amount=%d%s", ApiUri(c), id, amount, sourceParam)
 }
