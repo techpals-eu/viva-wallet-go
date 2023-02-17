@@ -70,3 +70,12 @@ func isDemo(c Config) bool {
 	return c.Demo
 }
 
+func newRequest(method string, uri string, reader *bytes.Reader) *http.Request {
+	var req *http.Request
+	if reader != nil {
+		req, _ = http.NewRequest(method, uri, reader)
+	} else {
+		req, _ = http.NewRequest(method, uri, nil)
+	}
+	return req
+}
