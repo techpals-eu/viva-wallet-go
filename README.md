@@ -26,6 +26,14 @@ There are 2 types of clients, one using basic authentication mechanism and anoth
 using OAuth. This is due to the implementation of the API itself, meaning that
 different API calls are using different type of authenication, hence this is unavoidable.
 
+## Installation
+
+Under your project directory run the following:
+
+```
+go get -u github.com/techpals-eu/viva-wallet
+```
+
 ## Payments
 
 ### Create order payment
