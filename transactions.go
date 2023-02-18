@@ -63,21 +63,21 @@ type CreateTransaction struct {
 }
 
 type TransactionResponse struct {
-	Emv                      *string   `json:"Emv"`
-	Amount                   int       `json:"Amount"`
-	StatusID                 string    `json:"StatusId"`
-	CurrencyCode             int       `json:"CurrencyCode"`
-	TransactionID            string    `json:"TransactionId"`
-	ReferenceNumber          int       `json:"ReferenceNumber"`
-	AuthorizationID          int       `json:"AuthorizationId"`
-	RetrievalReferenceNumber int       `json:"RetrievalReferenceNumber"`
-	ThreeDSecureStatusID     int       `json:"ThreeDSecureStatusId"`
-	ErrorCode                int       `json:"ErrorCode"`
-	ErrorText                string    `json:"ErrorText"`
-	Timestamp                time.Time `json:"TimeStamp"`
-	CorrelationID            *string   `json:"CorrelationId"`
-	EventID                  int       `json:"EventId"`
-	Success                  bool      `json:"Success"`
+	Emv                      string   `json:"Emv,omitempty"`
+	Amount                   float64   `json:"Amount"`
+	StatusID                 string    `json:"StatusId,omitempty"`
+	CurrencyCode             string    `json:"CurrencyCode,omitempty"`
+	TransactionID            string    `json:"TransactionId,omitempty"`
+	ReferenceNumber          int       `json:"ReferenceNumber,omitempty"`
+	AuthorizationID          string    `json:"AuthorizationId,omitempty"`
+	RetrievalReferenceNumber string    `json:"RetrievalReferenceNumber,omitempty"`
+	ThreeDSecureStatusID     int       `json:"ThreeDSecureStatusId,omitempty"`
+	ErrorCode                int       `json:"ErrorCode,omitempty"`
+	ErrorText                string    `json:"ErrorText,omitempty"`
+	Timestamp                time.Time `json:"TimeStamp,omitempty"`
+	CorrelationID            string    `json:"CorrelationId,omitempty"`
+	EventID                  int       `json:"EventId,omitempty"`
+	Success                  bool      `json:"Success,omitempty"`
 }
 
 // CreateTransaction creates a new transaction for a recurring payment or a pre-auth

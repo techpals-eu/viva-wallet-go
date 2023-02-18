@@ -45,7 +45,8 @@ func main() {
 	}
 
 	fmt.Printf("\nGet transaction\n")
-	trx, err4 := oauthClient.GetTransaction("a9531058-f0f7-44ff-a718-98920804ceab")
+	trxID := "a9531058-f0f7-44ff-a718-98920804ceab"
+	trx, err4 := oauthClient.GetTransaction(trxID)
 	if err4 != nil {
 		fmt.Printf("\nerr: %s\n", err4.Error())
 	} else {
@@ -80,4 +81,18 @@ func main() {
 		fmt.Printf("%v", opCancel)
 		fmt.Println("\nsuccess")
 	}
+
+	trx2, err9 := basicAuthClient.CancelTransaction("aacf07cf-9102-4b02-8172-72b7e1efd5d9", 100, "Default")
+	if err9 != nil {
+		fmt.Printf("\nerr: %s\n", err9.Error())
+	} else {
+		fmt.Printf("%v", trx2)
+		fmt.Println("\nsuccess")
+	}
+
+	payload := vivawallet.CreateTransaction{
+		Amount: 100,
+	}
+	trx3, err2 := basicAuthClient.CreateTransaction("cdc8e764-daf3-49de-9f44-c7f3b563c2d6", payload)
+	fmt.Printf("%v\nERR: %v\n", trx3, err2)
 }
