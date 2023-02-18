@@ -69,14 +69,12 @@ func (c BasicAuthClient) performReq(req *http.Request) ([]byte, error) {
 		return nil, fmt.Errorf("failed to perform request %s", httpErr)
 	}
 
+	defer resp.Body.Close()
 	body, bodyErr := io.ReadAll(resp.Body)
-	if bodyErr == nil {
-		resp.Body.Close()
-	}
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("failed to perform request with status %d", resp.StatusCode)
 	}
 
-	return body, nil
+	return body, bodyErr
 }
