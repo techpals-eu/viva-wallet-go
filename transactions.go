@@ -58,8 +58,8 @@ type CreateTransaction struct {
 	Installments int    `json:"installments,omitempty"`
 	CustomerTrnx string `json:"customerTrns,omitempty"`
 	MerchantTrns string `json:"merchantTrns,omitempty"`
-	SourceCode   int    `json:"sourceCode"`
-	TipAmount    int    `json:"tipAmount"`
+	SourceCode   string `json:"sourceCode,omitempty"`
+	TipAmount    int    `json:"tipAmount,omitempty"`
 }
 
 type TransactionResponse struct {
