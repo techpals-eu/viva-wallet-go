@@ -18,6 +18,7 @@ type CheckoutOrder struct {
 		RequestLang string `json:"requestLang,omitempty"`
 	} `json:"customer,omitempty"`
 	PaymentTimeout       int      `json:"paymentTimeout,omitempty"`
+	PreAuth              bool     `json:"preauth,omitempty"`
 	AllowRecurring       bool     `json:"allowRecurring,omitempty"`
 	MaxInstallments      int      `json:"maxInstallments,omitempty"`
 	PaymentNotification  bool     `json:"paymentNotification,omitempty"`
