@@ -72,3 +72,9 @@ cardToken, err2 := CreateCardToken(cardToken)
 ```
 
 For more examples check out: [main.go](./example/main.go)
+
+---
+
+<p align="center">
+  <i>👩‍💻 Built by <a href="https://techpals.eu/">TechPals</a> 👨‍💻</i>
+</p>
