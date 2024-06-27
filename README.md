@@ -2,6 +2,8 @@
 
 viva-wallet is an SDK for connecting to the payment provider Viva Wallet.
 
+[![Get started with TechPals](./cover.jpg)](https://techpals.eu/?utm_source=viva-wallet-go&utm_medium=github)
+
 ## Supported Endpoints
 
 - [Authentication (OAuth)](https://developer.vivawallet.com/apis-for-payments/payment-api/#section/Authentication)
