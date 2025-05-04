@@ -1,6 +1,6 @@
 # Viva Wallet Go SDK
 
-viva-wallet is an SDK for connecting to the payment provider Viva Wallet.
+viva-wallet is an SDK for connecting to the payment provider Viva Wallet developed by [TechPals](https://techpals.eu).
 
 [![Get started with TechPals](./cover.jpg)](https://techpals.eu/?utm_source=viva-wallet-go&utm_medium=github)
 
