@@ -1,4 +1,4 @@
-# Viva Wallet Go SDK - LK
+# Viva Wallet Go SDK
 
 viva-wallet is an SDK for connecting to the payment provider Viva Wallet developed by [TechPals](https://techpals.eu).
 
