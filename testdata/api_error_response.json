@@ -1,0 +1,6 @@
+{
+  "ErrorCode": 1013,
+  "ErrorText": "Invalid TransactionId",
+  "EventId": 123456789,
+  "CorrelationId": "abc-def-123"
+}

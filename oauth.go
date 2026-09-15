@@ -180,6 +180,9 @@ func (c *OAuthClient) tokenEndpoint() string {
 }
 
 func (c *OAuthClient) authUri() string {
+	if c.Config.authBase != "" {
+		return c.Config.authBase
+	}
 	if isDemo(c.Config) {
 		return "https://demo-accounts.vivapayments.com"
 	}
