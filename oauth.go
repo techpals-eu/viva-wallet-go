@@ -24,22 +24,38 @@ func NewOAuth(clientID string, clientSecret string, demo bool) *OAuthClient {
 }
 
 func (c *OAuthClient) Post(uri string, reader *bytes.Reader, v interface{}) error {
-	req := newRequest("POST", uri, reader)
+	req, err := newRequest("POST", uri, reader)
+	if err != nil {
+		return err
+	}
+
 	return c.performReq(req, v)
 }
 
 func (c *OAuthClient) Get(uri string, v interface{}) error {
-	req := newRequest("GET", uri, nil)
+	req, err := newRequest("GET", uri, nil)
+	if err != nil {
+		return err
+	}
+
 	return c.performReq(req, v)
 }
 
 func (c *OAuthClient) Patch(uri string, reader *bytes.Reader, v interface{}) error {
-	req := newRequest("PATCH", uri, reader)
+	req, err := newRequest("PATCH", uri, reader)
+	if err != nil {
+		return err
+	}
+
 	return c.performReq(req, v)
 }
 
 func (c *OAuthClient) Delete(uri string, reader *bytes.Reader, v interface{}) error {
-	req := newRequest("DELETE", uri, reader)
+	req, err := newRequest("DELETE", uri, reader)
+	if err != nil {
+		return err
+	}
+
 	return c.performReq(req, v)
 }
 

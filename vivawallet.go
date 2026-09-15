@@ -2,6 +2,8 @@ package vivawallet
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -70,12 +72,16 @@ func isDemo(c Config) bool {
 	return c.Demo
 }
 
-func newRequest(method string, uri string, reader *bytes.Reader) *http.Request {
-	var req *http.Request
+func newRequest(method string, uri string, reader *bytes.Reader) (*http.Request, error) {
+	var body io.Reader
 	if reader != nil {
-		req, _ = http.NewRequest(method, uri, reader)
-	} else {
-		req, _ = http.NewRequest(method, uri, nil)
+		body = reader
 	}
-	return req
+
+	req, err := http.NewRequest(method, uri, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build %s request for %s: %w", method, uri, err)
+	}
+
+	return req, nil
 }
