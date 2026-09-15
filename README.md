@@ -28,12 +28,49 @@ There are 2 types of clients, one using basic authentication mechanism and anoth
 using OAuth. This is due to the implementation of the API itself, meaning that
 different API calls are using different type of authenication, hence this is unavoidable.
 
+### OAuthClient now takes pointer receivers (1.1.0)
+
+As of **1.1.0**, `OAuthClient` methods moved from value receivers to pointer receivers. This is
+technically a breaking change, released under a minor version because no realistic caller is
+affected — the patterns it breaks are ones the documented API never asked you to write. If you
+pin versions, read this before upgrading from 1.0.x.
+
+`NewOAuth` returns `*OAuthClient`, so if you hold on to what the constructor gives you — as every
+example below does — nothing changes:
+
+```golang
+// Before and after: unchanged.
+oauthClient := vivawallet.NewOAuth(clientID, clientSecret, true)
+token, err := oauthClient.Authenticate()
+```
+
+What no longer compiles is calling a method on a non-addressable `OAuthClient` *value*:
+
+```golang
+// Before: compiled. Now: does not compile.
+vivawallet.OAuthClient{Config: cfg}.Authenticate()   // method on a composite literal
+clients["eu"].Authenticate()                          // OAuthClient value stored in a map
+var c vivawallet.Client = *vivawallet.NewOAuth(...)   // value assigned to the interface
+
+// After: take the pointer.
+c := vivawallet.NewOAuth(clientID, clientSecret, true)
+c.Authenticate()
+var _ vivawallet.Client = c
+```
+
+Dereferencing into a local variable (`v := *vivawallet.NewOAuth(...)`) still compiles, since Go
+takes the address of an addressable value automatically — but it no longer does what it used to.
+Previously a copied client *shared* its token with the original, so authenticating one
+authenticated both; each copy now carries its own token. `go vet` reports these copies
+(`assignment copies lock value ... contains sync.RWMutex`), so pass the `*OAuthClient` around
+instead of copying the client.
+
 ## Installation
 
 Under your project directory run the following:
 
 ```
-go get -u github.com/techpals-eu/viva-wallet
+go get -u github.com/techpals-eu/viva-wallet-go
 ```
 
 ## Payments

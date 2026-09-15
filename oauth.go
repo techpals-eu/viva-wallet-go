@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -20,9 +19,7 @@ func NewOAuth(clientID string, clientSecret string, demo bool) *OAuthClient {
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 		},
-		Client:     httpClient,
-		tokenValue: &token{},
-		lock:       &sync.RWMutex{},
+		Client: httpClient,
 	}
 }
 
