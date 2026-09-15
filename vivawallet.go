@@ -23,8 +23,8 @@ type token struct {
 type OAuthClient struct {
 	Config     Config
 	Client     *http.Client
-	lock       *sync.RWMutex
-	tokenValue *token
+	lock       sync.RWMutex
+	tokenValue token
 }
 
 type BasicAuthClient struct {
