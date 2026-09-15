@@ -26,31 +26,31 @@ func NewOAuth(clientID string, clientSecret string, demo bool) *OAuthClient {
 	}
 }
 
-func (c OAuthClient) Post(uri string, reader *bytes.Reader, v interface{}) error {
+func (c *OAuthClient) Post(uri string, reader *bytes.Reader, v interface{}) error {
 	req := newRequest("POST", uri, reader)
 	return c.performReq(req, v)
 }
 
-func (c OAuthClient) Get(uri string, v interface{}) error {
+func (c *OAuthClient) Get(uri string, v interface{}) error {
 	req := newRequest("GET", uri, nil)
 	return c.performReq(req, v)
 }
 
-func (c OAuthClient) Patch(uri string, reader *bytes.Reader, v interface{}) error {
+func (c *OAuthClient) Patch(uri string, reader *bytes.Reader, v interface{}) error {
 	req := newRequest("PATCH", uri, reader)
 	return c.performReq(req, v)
 }
 
-func (c OAuthClient) Delete(uri string, reader *bytes.Reader, v interface{}) error {
+func (c *OAuthClient) Delete(uri string, reader *bytes.Reader, v interface{}) error {
 	req := newRequest("DELETE", uri, reader)
 	return c.performReq(req, v)
 }
 
-func (c OAuthClient) setBearerToken(req *http.Request) {
+func (c *OAuthClient) setBearerToken(req *http.Request) {
 	req.Header.Set("Authorization", "Bearer "+c.AuthToken())
 }
 
-func (c OAuthClient) performReq(req *http.Request, v interface{}) error {
+func (c *OAuthClient) performReq(req *http.Request, v interface{}) error {
 	req.Header.Add("Content-Type", "application/json")
 	c.setBearerToken(req)
 
@@ -85,7 +85,7 @@ type TokenResponse struct {
 // Authenticate retrieves the access token to continue making requests to Viva's API. It
 // returns the full response of the API and stores the token and expiration time for
 // later use.
-func (c OAuthClient) Authenticate() (*TokenResponse, error) {
+func (c *OAuthClient) Authenticate() (*TokenResponse, error) {
 	uri := c.tokenEndpoint()
 
 	grant := []byte("grant_type=client_credentials")
@@ -120,7 +120,7 @@ func (c OAuthClient) Authenticate() (*TokenResponse, error) {
 }
 
 // AuthToken returns the token value
-func (c OAuthClient) AuthToken() string {
+func (c *OAuthClient) AuthToken() string {
 	c.lock.RLock()
 
 	t := c.tokenValue.value
@@ -130,7 +130,7 @@ func (c OAuthClient) AuthToken() string {
 }
 
 // SetToken sets the token value and the expiration time of the token.
-func (c OAuthClient) SetToken(value string, expires time.Time) {
+func (c *OAuthClient) SetToken(value string, expires time.Time) {
 	c.lock.Lock()
 
 	c.tokenValue.value = value
@@ -141,7 +141,7 @@ func (c OAuthClient) SetToken(value string, expires time.Time) {
 
 // HasAuthExpired returns true if the expiry time of the token has passed and false
 // otherwise.
-func (c OAuthClient) HasAuthExpired() bool {
+func (c *OAuthClient) HasAuthExpired() bool {
 	c.lock.RLock()
 
 	expires := c.tokenValue.expires
@@ -162,11 +162,11 @@ func BasicAuth(c Config) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func (c OAuthClient) tokenEndpoint() string {
+func (c *OAuthClient) tokenEndpoint() string {
 	return fmt.Sprintf("%s/%s", c.authUri(), "/connect/token")
 }
 
-func (c OAuthClient) authUri() string {
+func (c *OAuthClient) authUri() string {
 	if isDemo(c.Config) {
 		return "https://demo-accounts.vivapayments.com"
 	}
