@@ -15,23 +15,18 @@ func futureExpiry() time.Time {
 func newOAuthTestClient(t *testing.T, srv *httptest.Server) *OAuthClient {
 	t.Helper()
 
-	c := NewOAuth("client-id", "client-secret", true)
-	c.Client = srv.Client()
-	c.Config.apiBase = srv.URL
-	c.Config.appBase = srv.URL
-	c.Config.authBase = srv.URL
-
-	return c
+	return NewOAuth("client-id", "client-secret", true,
+		WithHTTPClient(srv.Client()),
+		WithBaseURLs(srv.URL, srv.URL, srv.URL),
+	)
 }
 
 // newBasicAuthTestClient returns a BasicAuthClient wired to srv instead of Viva's real hosts.
 func newBasicAuthTestClient(t *testing.T, srv *httptest.Server) *BasicAuthClient {
 	t.Helper()
 
-	c := NewBasicAuth("merchant-id", "api-key", true)
-	c.Client = srv.Client()
-	c.Config.apiBase = srv.URL
-	c.Config.appBase = srv.URL
-
-	return c
+	return NewBasicAuth("merchant-id", "api-key", true,
+		WithHTTPClient(srv.Client()),
+		WithBaseURLs(srv.URL, srv.URL, ""),
+	)
 }
