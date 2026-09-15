@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 )
 
@@ -123,7 +124,7 @@ func (c BasicAuthClient) CancelTransaction(id string, amount int64, sourceCode s
 func getCancelTransactionUri(c Config, id string, amount int64, sourceCode string) string {
 	var sourceParam = ""
 	if sourceCode != "" {
-		sourceParam = "&sourceCode=" + sourceCode
+		sourceParam = "&sourceCode=" + url.QueryEscape(sourceCode)
 	}
 
 	return fmt.Sprintf("%s/api/transactions/%s?amount=%d%s", AppUri(c), id, amount, sourceParam)
@@ -151,7 +152,7 @@ func (c *OAuthClient) CancelPartialAuthorization(id string, amount int64, source
 func getCancelPartialAuthUri(c Config, id string, amount int64, sourceCode string) string {
 	var sourceParam = ""
 	if sourceCode != "" {
-		sourceParam = "&sourceCode=" + sourceCode
+		sourceParam = "&sourceCode=" + url.QueryEscape(sourceCode)
 	}
 
 	return fmt.Sprintf("%s/acquiring/v1/transactions/%s?amount=%d%s", ApiUri(c), id, amount, sourceParam)
