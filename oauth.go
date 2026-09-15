@@ -53,20 +53,20 @@ func (c *OAuthClient) performReq(req *http.Request, v interface{}) error {
 
 	resp, httpErr := c.Client.Do(req)
 	if httpErr != nil {
-		return fmt.Errorf("failed to perform request %s", httpErr)
+		return fmt.Errorf("failed to perform request: %w", httpErr)
 	}
 
-	body, bodyErr := io.ReadAll(resp.Body)
-	if bodyErr == nil {
-		resp.Body.Close()
-	}
-
+	body, bodyErr := readBody(resp)
 	if bodyErr != nil {
 		return bodyErr
 	}
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to perform request with status %d", resp.StatusCode)
+	if !isSuccess(resp.StatusCode) {
+		return newAPIError(resp.StatusCode, body)
+	}
+
+	if len(body) == 0 {
+		return nil
 	}
 
 	return json.Unmarshal(body, v)
