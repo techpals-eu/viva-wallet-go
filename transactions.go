@@ -34,8 +34,9 @@ type GetTransactionResponse struct {
 func (c OAuthClient) GetTransaction(trxID string) (*GetTransactionResponse, error) {
 	// TODO: use RoundTripper to avoid rewriting this
 	if c.HasAuthExpired() {
-		_, authErr := c.Authenticate()
-		return nil, fmt.Errorf("authentication error %s", authErr)
+		if _, authErr := c.Authenticate(); authErr != nil {
+			return nil, fmt.Errorf("authentication error: %w", authErr)
+		}
 	}
 
 	uri := getTransactionUri(c.Config, trxID)
@@ -132,8 +133,9 @@ func getCancelTransactionUri(c Config, id string, amount int64, sourceCode strin
 // Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Transactions-(Deprecated)/paths/~1acquiring~1v1~1transactions~1{transactionId}/delete
 func (c OAuthClient) CancelPartialAuthorization(id string, amount int64, sourceCode string) error {
 	if c.HasAuthExpired() {
-		_, authErr := c.Authenticate()
-		return fmt.Errorf("authentication error %s", authErr)
+		if _, authErr := c.Authenticate(); authErr != nil {
+			return fmt.Errorf("authentication error: %w", authErr)
+		}
 	}
 	uri := getCancelPartialAuthUri(c.Config, id, amount, sourceCode)
 

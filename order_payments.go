@@ -41,8 +41,9 @@ type CheckoutOrderResponse struct {
 func (c OAuthClient) CreateOrderPayment(payload CheckoutOrder) (*CheckoutOrderResponse, error) {
 	// Check if auth expired and if so authenticate again
 	if c.HasAuthExpired() {
-		_, authErr := c.Authenticate()
-		return nil, fmt.Errorf("authentication error %s", authErr)
+		if _, authErr := c.Authenticate(); authErr != nil {
+			return nil, fmt.Errorf("authentication error: %w", authErr)
+		}
 	}
 
 	uri := checkoutOrderUri(c.Config)
