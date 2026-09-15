@@ -176,7 +176,7 @@ func BasicAuth(c Config) string {
 }
 
 func (c *OAuthClient) tokenEndpoint() string {
-	return fmt.Sprintf("%s/%s", c.authUri(), "/connect/token")
+	return c.authUri() + "/connect/token"
 }
 
 func (c *OAuthClient) authUri() string {
