@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 )
 
@@ -27,6 +26,10 @@ func (c BasicAuthClient) Get(uri string, v interface{}) error {
 		return reqErr
 	}
 
+	if len(body) == 0 {
+		return nil
+	}
+
 	return json.Unmarshal(body, v)
 }
 
@@ -35,6 +38,10 @@ func (c BasicAuthClient) Post(uri string, reader *bytes.Reader, v interface{}) e
 	body, reqErr := c.performReq(req)
 	if reqErr != nil {
 		return reqErr
+	}
+
+	if len(body) == 0 {
+		return nil
 	}
 
 	return json.Unmarshal(body, v)
@@ -57,6 +64,10 @@ func (c BasicAuthClient) Delete(uri string, reader *bytes.Reader, v interface{})
 		return reqErr
 	}
 
+	if len(body) == 0 {
+		return nil
+	}
+
 	return json.Unmarshal(body, v)
 }
 
@@ -66,15 +77,17 @@ func (c BasicAuthClient) performReq(req *http.Request) ([]byte, error) {
 
 	resp, httpErr := c.Client.Do(req)
 	if httpErr != nil {
-		return nil, fmt.Errorf("failed to perform request %s", httpErr)
+		return nil, fmt.Errorf("failed to perform request: %w", httpErr)
 	}
 
-	defer resp.Body.Close()
-	body, bodyErr := io.ReadAll(resp.Body)
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to perform request with status %d", resp.StatusCode)
+	body, bodyErr := readBody(resp)
+	if bodyErr != nil {
+		return nil, bodyErr
 	}
 
-	return body, bodyErr
+	if !isSuccess(resp.StatusCode) {
+		return nil, newAPIError(resp.StatusCode, body)
+	}
+
+	return body, nil
 }
