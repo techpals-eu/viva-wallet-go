@@ -11,15 +11,23 @@ import (
 	"time"
 )
 
-// New creates a new viva client for the oauth apis
-func NewOAuth(clientID string, clientSecret string, demo bool) *OAuthClient {
+// NewOAuth creates a new viva client for the oauth apis.
+//
+// Without options the client gets its own http.Client with a 60s timeout. Use
+// WithHTTPClient, WithTimeout or WithBaseURLs to change that.
+func NewOAuth(clientID string, clientSecret string, demo bool, opts ...Option) *OAuthClient {
+	o := newOptions(opts...)
+
+	cfg := Config{
+		Demo:         demo,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+	}
+	o.applyTo(&cfg)
+
 	return &OAuthClient{
-		Config: Config{
-			Demo:         demo,
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-		},
-		Client: httpClient,
+		Config: cfg,
+		Client: o.client(),
 	}
 }
 

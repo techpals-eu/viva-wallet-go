@@ -30,29 +30,27 @@ type token struct {
 }
 
 type OAuthClient struct {
-	Config     Config
-	Client     *http.Client
+	Config Config
+
+	// Client performs every request this client makes. Prefer setting it at construction
+	// with WithHTTPClient; mutating it afterwards races with in-flight requests.
+	Client *http.Client
+
 	lock       sync.RWMutex
 	tokenValue token
 }
 
 type BasicAuthClient struct {
 	Config Config
+
+	// Client performs every request this client makes. Prefer setting it at construction
+	// with WithHTTPClient; mutating it afterwards races with in-flight requests.
 	Client *http.Client
 }
 
-// defaultHTTPTimeout is the default timeout on the http.Client used by the library.
+// defaultTimeout is the timeout on the http.Client a client gets when neither
+// WithHTTPClient nor WithTimeout is passed to its constructor.
 const defaultTimeout = 60 * time.Second
-
-var (
-	httpClient *http.Client
-)
-
-func init() {
-	httpClient = &http.Client{
-		Timeout: defaultTimeout,
-	}
-}
 
 type Client interface {
 	Get(uri string, v interface{}) error

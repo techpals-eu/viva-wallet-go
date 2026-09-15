@@ -7,15 +7,23 @@ import (
 	"net/http"
 )
 
-// New creates a new viva client for the basic auth apis
-func NewBasicAuth(merchantID string, apiKey string, demo bool) *BasicAuthClient {
+// NewBasicAuth creates a new viva client for the basic auth apis.
+//
+// Without options the client gets its own http.Client with a 60s timeout. Use
+// WithHTTPClient, WithTimeout or WithBaseURLs to change that.
+func NewBasicAuth(merchantID string, apiKey string, demo bool, opts ...Option) *BasicAuthClient {
+	o := newOptions(opts...)
+
+	cfg := Config{
+		Demo:       demo,
+		MerchantID: merchantID,
+		APIKey:     apiKey,
+	}
+	o.applyTo(&cfg)
+
 	return &BasicAuthClient{
-		Config: Config{
-			Demo:       demo,
-			MerchantID: merchantID,
-			APIKey:     apiKey,
-		},
-		Client: httpClient,
+		Config: cfg,
+		Client: o.client(),
 	}
 }
 
