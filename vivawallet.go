@@ -15,6 +15,13 @@ type Config struct {
 	ClientSecret string
 	MerchantID   string
 	APIKey       string
+
+	// apiBase, appBase and authBase override the corresponding host when set, so tests can
+	// point the SDK at an httptest.Server instead of Viva's real hosts. Left zero-valued in
+	// normal use.
+	apiBase  string
+	appBase  string
+	authBase string
 }
 
 type token struct {
@@ -55,6 +62,9 @@ type Client interface {
 
 // ApiUri returns the uri of the production or the demo api.
 func ApiUri(c Config) string {
+	if c.apiBase != "" {
+		return c.apiBase
+	}
 	if isDemo(c) {
 		return "https://demo-api.vivapayments.com"
 	}
@@ -62,6 +72,9 @@ func ApiUri(c Config) string {
 }
 
 func AppUri(c Config) string {
+	if c.appBase != "" {
+		return c.appBase
+	}
 	if isDemo(c) {
 		return "https://demo.vivapayments.com"
 	}

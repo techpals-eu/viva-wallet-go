@@ -1,0 +1,21 @@
+{
+  "email": "customer@example.com",
+  "amount": 10.0,
+  "orderCode": 5099296005794370,
+  "statusId": "F",
+  "fullName": "John Doe",
+  "insDate": "2026-09-15T10:00:00Z",
+  "cardNumber": "497100XXXXXX0000",
+  "currencyCode": "978",
+  "customerTrns": "customer ref",
+  "merchantTrns": "merchant ref",
+  "transactionTypeId": 1,
+  "recurringSupport": false,
+  "totalInstallments": 0,
+  "cardCountryCode": "GRC",
+  "cardIssuingBank": "Example Bank",
+  "currentInstallment": 0,
+  "cardUniqueReference": "abc123",
+  "cardTypeId": 1,
+  "digitalWalletId": 0
+}

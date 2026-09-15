@@ -1,0 +1,12 @@
+[
+  {
+    "Iban": "GR1601101250000000012300695",
+    "WalletId": 1,
+    "IsPrimary": true,
+    "Amount": 1000.5,
+    "Available": 950.25,
+    "Overdraft": 0,
+    "FriendlyName": "Main wallet",
+    "CurrencyCode": "978"
+  }
+]
