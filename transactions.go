@@ -9,25 +9,25 @@ import (
 )
 
 type GetTransactionResponse struct {
-	Email               string    `json:"email"`
-	Amount              float64   `json:"amount"`
-	OrderCode           int       `json:"orderCode"`
-	StatusID            string    `json:"statusId"`
-	FullName            string    `json:"fullName"`
-	InsDate             time.Time `json:"insDate"`
-	CardNumber          string    `json:"cardNumber"`
-	CurrencyCode        string    `json:"currencyCode"`
-	CustomerTrns        string    `json:"customerTrns"`
-	MerchantTrns        string    `json:"merchantTrns"`
-	TransactionTypeID   int       `json:"transactionTypeId"`
-	RecurringSupport    bool      `json:"recurringSupport"`
-	TotalInstallments   int       `json:"totalInstallments"`
-	CardCountryCode     string    `json:"cardCountryCode"`
-	CardIssuingBank     string    `json:"cardIssuingBank"`
-	CurrentInstallment  int       `json:"currentInstallment"`
-	CardUniqueReference string    `json:"cardUniqueReference"`
-	CardTypeID          int       `json:"cardTypeId"`
-	DigitalWalletID     int       `json:"digitalWalletId"`
+	Email               string            `json:"email"`
+	Amount              float64           `json:"amount"`
+	OrderCode           int               `json:"orderCode"`
+	StatusID            TransactionStatus `json:"statusId"`
+	FullName            string            `json:"fullName"`
+	InsDate             time.Time         `json:"insDate"`
+	CardNumber          string            `json:"cardNumber"`
+	CurrencyCode        string            `json:"currencyCode"`
+	CustomerTrns        string            `json:"customerTrns"`
+	MerchantTrns        string            `json:"merchantTrns"`
+	TransactionTypeID   int               `json:"transactionTypeId"`
+	RecurringSupport    bool              `json:"recurringSupport"`
+	TotalInstallments   int               `json:"totalInstallments"`
+	CardCountryCode     string            `json:"cardCountryCode"`
+	CardIssuingBank     string            `json:"cardIssuingBank"`
+	CurrentInstallment  int               `json:"currentInstallment"`
+	CardUniqueReference string            `json:"cardUniqueReference"`
+	CardTypeID          int               `json:"cardTypeId"`
+	DigitalWalletID     int               `json:"digitalWalletId"`
 }
 
 // GetTransaction fetches a transaction given an ID.
@@ -65,21 +65,21 @@ type CreateTransaction struct {
 }
 
 type TransactionResponse struct {
-	Emv                      string   `json:"Emv,omitempty"`
-	Amount                   float64   `json:"Amount"`
-	StatusID                 string    `json:"StatusId,omitempty"`
-	CurrencyCode             string    `json:"CurrencyCode,omitempty"`
-	TransactionID            string    `json:"TransactionId,omitempty"`
-	ReferenceNumber          int       `json:"ReferenceNumber,omitempty"`
-	AuthorizationID          string    `json:"AuthorizationId,omitempty"`
-	RetrievalReferenceNumber string    `json:"RetrievalReferenceNumber,omitempty"`
-	ThreeDSecureStatusID     int       `json:"ThreeDSecureStatusId,omitempty"`
-	ErrorCode                int       `json:"ErrorCode,omitempty"`
-	ErrorText                string    `json:"ErrorText,omitempty"`
-	Timestamp                time.Time `json:"TimeStamp,omitempty"`
-	CorrelationID            string    `json:"CorrelationId,omitempty"`
-	EventID                  int       `json:"EventId,omitempty"`
-	Success                  bool      `json:"Success,omitempty"`
+	Emv                      string            `json:"Emv,omitempty"`
+	Amount                   float64           `json:"Amount"`
+	StatusID                 TransactionStatus `json:"StatusId,omitempty"`
+	CurrencyCode             string            `json:"CurrencyCode,omitempty"`
+	TransactionID            string            `json:"TransactionId,omitempty"`
+	ReferenceNumber          int               `json:"ReferenceNumber,omitempty"`
+	AuthorizationID          string            `json:"AuthorizationId,omitempty"`
+	RetrievalReferenceNumber string            `json:"RetrievalReferenceNumber,omitempty"`
+	ThreeDSecureStatusID     int               `json:"ThreeDSecureStatusId,omitempty"`
+	ErrorCode                int               `json:"ErrorCode,omitempty"`
+	ErrorText                string            `json:"ErrorText,omitempty"`
+	Timestamp                time.Time         `json:"TimeStamp,omitempty"`
+	CorrelationID            string            `json:"CorrelationId,omitempty"`
+	EventID                  int               `json:"EventId,omitempty"`
+	Success                  bool              `json:"Success,omitempty"`
 }
 
 // CreateTransaction creates a new transaction for a recurring payment or a pre-auth

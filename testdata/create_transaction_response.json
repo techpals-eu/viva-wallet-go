@@ -1,0 +1,17 @@
+{
+  "Emv": null,
+  "Amount": 90.00,
+  "StatusId": "F",
+  "CurrencyCode": "978",
+  "TransactionId": "bd5390a9-5870-4d8d-abea-7f5a94f9cecc",
+  "ReferenceNumber": 933351,
+  "AuthorizationId": "933351",
+  "RetrievalReferenceNumber": "122411933351",
+  "ThreeDSecureStatusId": 2,
+  "ErrorCode": 0,
+  "ErrorText": "Error description",
+  "TimeStamp": "2012-12-24T15:23:38.5157933+02:00",
+  "CorrelationId": null,
+  "EventId": 0,
+  "Success": true
+}
