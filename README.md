@@ -28,6 +28,39 @@ There are 2 types of clients, one using basic authentication mechanism and anoth
 using OAuth. This is due to the implementation of the API itself, meaning that
 different API calls are using different type of authenication, hence this is unavoidable.
 
+### Typed transaction status and order state
+
+The status fields decode into named types instead of bare `string` / `int`, so you can compare
+against constants rather than magic values:
+
+```golang
+trx, err := oauthClient.GetTransaction(transactionID)
+if err != nil {
+    return err
+}
+if trx.StatusID == vivawallet.TransactionStatusFinished {
+    // payment successful
+}
+
+order, err := basicAuthClient.GetOrderPayment(orderCode)
+if err != nil {
+    return err
+}
+if order.StateID == vivawallet.OrderStatePaid {
+    // order has been paid
+}
+```
+
+`GetTransactionResponse.StatusID` and `TransactionResponse.StatusID` are now
+`TransactionStatus` (underlying type `string`); `GetOrderPaymentResponse.StateID` is now
+`OrderState` (underlying type `int`). The JSON encoding is unchanged, and comparisons against
+untyped string/int literals (`trx.StatusID == "F"`) still compile. Code that assigns these
+fields to an explicitly-typed `string` or `int` variable, or passes them to a function taking
+one, needs a conversion: `string(trx.StatusID)`.
+
+Note that `TransactionStatus` is a string, not a single character — the dispute statuses
+(`MA`, `MI`, `ML`, `MW`, `MS`) are two characters wide.
+
 ### OAuthClient now takes pointer receivers (1.1.0)
 
 As of **1.1.0**, `OAuthClient` methods moved from value receivers to pointer receivers. This is
