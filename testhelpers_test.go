@@ -30,3 +30,15 @@ func newBasicAuthTestClient(t *testing.T, srv *httptest.Server) *BasicAuthClient
 		WithBaseURLs(srv.URL, srv.URL, ""),
 	)
 }
+
+// newISVTestClient returns an ISVClient wired to srv instead of Viva's real hosts.
+func newISVTestClient(t *testing.T, srv *httptest.Server, opts ...Option) *ISVClient {
+	t.Helper()
+
+	opts = append([]Option{
+		WithHTTPClient(srv.Client()),
+		WithBaseURLs(srv.URL, srv.URL, srv.URL),
+	}, opts...)
+
+	return NewISV("reseller-id", "reseller-api-key", "client-id", "client-secret", true, opts...)
+}

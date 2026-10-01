@@ -1,0 +1,20 @@
+{
+  "abortAckTime": null,
+  "abortOperation": false,
+  "abortSuccess": false,
+  "amount": 16074,
+  "authorizationId": null,
+  "cashRegisterId": "SH00001455",
+  "message": "Invalid card",
+  "orderCode": "0",
+  "referenceNumber": 0,
+  "retrievalReferenceNumber": null,
+  "sessionId": "16304888_11369",
+  "shortOrderCode": "0",
+  "success": false,
+  "terminalId": "16304888",
+  "tid": "16304888",
+  "transactionDateTime": null,
+  "transactionId": null,
+  "transactionTypeId": null
+}

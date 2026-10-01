@@ -14,6 +14,8 @@ type options struct {
 	apiBase  string
 	appBase  string
 	authBase string
+
+	scope string
 }
 
 // Option customises a client at construction time. Options are applied in the order they
@@ -67,6 +69,15 @@ func WithBaseURLs(api, app, auth string) Option {
 	}
 }
 
+// WithScope sets the OAuth scope requested from the token endpoint. Viva's ISV and EFT POS
+// flows are documented as using scoped tokens; the plain payments flow needs no scope, which
+// is the default. An empty string leaves the token request without a scope parameter.
+func WithScope(scope string) Option {
+	return func(o *options) {
+		o.scope = scope
+	}
+}
+
 // newOptions applies opts on top of the SDK defaults.
 func newOptions(opts ...Option) options {
 	o := options{timeout: defaultTimeout}
@@ -84,6 +95,7 @@ func (o options) applyTo(c *Config) {
 	c.apiBase = o.apiBase
 	c.appBase = o.appBase
 	c.authBase = o.authBase
+	c.scope = o.scope
 }
 
 // client returns the http.Client to use, defaulting to a fresh one per SDK client so two

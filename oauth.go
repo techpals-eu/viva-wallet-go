@@ -2,13 +2,12 @@ package vivawallet
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"time"
+	"net/url"
 )
 
 // NewOAuth creates a new viva client for the oauth apis.
@@ -67,15 +66,11 @@ func (c *OAuthClient) Delete(uri string, reader *bytes.Reader, v interface{}) er
 	return c.performReq(req, v)
 }
 
-func (c *OAuthClient) setBearerToken(req *http.Request) {
-	req.Header.Set("Authorization", "Bearer "+c.AuthToken())
-}
-
+// performReq sends req with a bearer token, refreshing the token first if it has expired.
 func (c *OAuthClient) performReq(req *http.Request, v interface{}) error {
 	req.Header.Add("Content-Type", "application/json")
-	c.setBearerToken(req)
 
-	resp, httpErr := c.Client.Do(req)
+	resp, httpErr := bearerClient(c.Client, c.Config, &c.tokenCache, c.authenticate).Do(req)
 	if httpErr != nil {
 		return fmt.Errorf("failed to perform request: %w", httpErr)
 	}
@@ -106,27 +101,54 @@ type TokenResponse struct {
 // Authenticate retrieves the access token to continue making requests to Viva's API. It
 // returns the full response of the API and stores the token and expiration time for
 // later use.
+//
+// Calling it is optional: every request refreshes an expired token on its own. Call it to
+// fail fast on bad credentials, or to read the token response.
 func (c *OAuthClient) Authenticate() (*TokenResponse, error) {
-	uri := c.tokenEndpoint()
+	return c.authenticate(context.Background())
+}
 
-	grant := []byte("grant_type=client_credentials")
-	req, _ := http.NewRequest("POST", uri, bytes.NewBuffer(grant))
-	req.SetBasicAuth(c.Config.ClientID, c.Config.ClientSecret)
+// authenticate fetches and stores a token on the plain http.Client, never the bearer one,
+// so a refresh cannot recurse into itself.
+func (c *OAuthClient) authenticate(ctx context.Context) (*TokenResponse, error) {
+	resp, err := requestToken(ctx, c.Client, c.tokenEndpoint(), c.Config.ClientID, c.Config.ClientSecret, c.Config.scope)
+	if err != nil {
+		return nil, err
+	}
+
+	c.storeToken(resp)
+
+	return resp, nil
+}
+
+// requestToken performs the client-credentials token request shared by every bearer-token
+// client. scope is omitted from the request body when empty, which is what the non-ISV
+// OAuth flow expects.
+func requestToken(ctx context.Context, hc *http.Client, uri, clientID, clientSecret, scope string) (*TokenResponse, error) {
+	form := url.Values{"grant_type": {"client_credentials"}}
+	if scope != "" {
+		form.Set("scope", scope)
+	}
+
+	req, reqErr := http.NewRequestWithContext(ctx, "POST", uri, bytes.NewBufferString(form.Encode()))
+	if reqErr != nil {
+		return nil, fmt.Errorf("failed to build access token request: %w", reqErr)
+	}
+	req.SetBasicAuth(clientID, clientSecret)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, httpErr := c.Client.Do(req)
+	resp, httpErr := hc.Do(req)
 	if httpErr != nil {
-		return nil, fmt.Errorf("failed to perform access token request %s", httpErr)
+		return nil, fmt.Errorf("failed to perform access token request: %w", httpErr)
 	}
 
-	if resp.StatusCode != 200 {
-		return nil, errors.New("non successful response")
-	}
-
-	defer resp.Body.Close()
-	body, bodyErr := io.ReadAll(resp.Body)
+	body, bodyErr := readBody(resp)
 	if bodyErr != nil {
 		return nil, bodyErr
+	}
+
+	if !isSuccess(resp.StatusCode) {
+		return nil, newAPIError(resp.StatusCode, body)
 	}
 
 	response := &TokenResponse{}
@@ -134,43 +156,7 @@ func (c *OAuthClient) Authenticate() (*TokenResponse, error) {
 		return nil, jsonErr
 	}
 
-	expiry := time.Now().Add(time.Second * time.Duration(response.ExpiresIn))
-	c.SetToken(response.AccessToken, expiry)
-
 	return response, nil
-}
-
-// AuthToken returns the token value
-func (c *OAuthClient) AuthToken() string {
-	c.lock.RLock()
-
-	t := c.tokenValue.value
-
-	c.lock.RUnlock()
-	return t
-}
-
-// SetToken sets the token value and the expiration time of the token.
-func (c *OAuthClient) SetToken(value string, expires time.Time) {
-	c.lock.Lock()
-
-	c.tokenValue.value = value
-	c.tokenValue.expires = expires
-
-	c.lock.Unlock()
-}
-
-// HasAuthExpired returns true if the expiry time of the token has passed and false
-// otherwise.
-func (c *OAuthClient) HasAuthExpired() bool {
-	c.lock.RLock()
-
-	expires := c.tokenValue.expires
-
-	c.lock.RUnlock()
-
-	now := time.Now()
-	return now.After(expires)
 }
 
 func AuthBody(c Config) string {
@@ -184,14 +170,23 @@ func BasicAuth(c Config) string {
 }
 
 func (c *OAuthClient) tokenEndpoint() string {
-	return c.authUri() + "/connect/token"
+	return tokenEndpoint(c.Config)
+}
+
+// tokenEndpoint returns the OAuth token endpoint for the configured environment.
+func tokenEndpoint(c Config) string {
+	return authUri(c) + "/connect/token"
 }
 
 func (c *OAuthClient) authUri() string {
-	if c.Config.authBase != "" {
-		return c.Config.authBase
+	return authUri(c.Config)
+}
+
+func authUri(c Config) string {
+	if c.authBase != "" {
+		return c.authBase
 	}
-	if isDemo(c.Config) {
+	if isDemo(c) {
 		return "https://demo-accounts.vivapayments.com"
 	}
 	return "https://accounts.vivapayments.com"
