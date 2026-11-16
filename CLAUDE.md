@@ -25,6 +25,10 @@ make example  # live demo API; needs VIVA_CLIENT_ID, VIVA_CLIENT_SECRET, VIVA_ME
   govulncheck once on the newest Go; vet/build/test on every Go 1.17–1.26; ginviva on 1.20–1.26.
   `CI OK` is the single job to mark required in branch protection. Bump `GO_LATEST` and
   `STATICCHECK` together (each staticcheck release needs a minimum Go to build).
+- govulncheck runs through [scripts/govulncheck.sh](scripts/govulncheck.sh), which fails on any
+  reachable vulnerability except the IDs in [.govulncheck-ignore](.govulncheck-ignore) (currently
+  x/net HTTP/2 fixes that need go 1.26, which ginviva can't require yet). Never add an ID without
+  a reason.
 - [release.yml](.github/workflows/release.yml): publishing is pushing a tag. `vX.Y.Z` must equal
   `VERSION`; `ginviva/vX.Y.Z` must have no `replace` in `ginviva/go.mod`. It re-runs CI, creates
   the GitHub release, and warms proxy.golang.org so pkg.go.dev shows it.

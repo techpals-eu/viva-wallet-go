@@ -22,8 +22,7 @@ tidy-check:
 	cd ginviva && go mod tidy -diff
 
 vuln:
-	govulncheck ./...
-	cd ginviva && govulncheck ./...
+	scripts/govulncheck.sh . ginviva
 
 test:
 	go test -race ./...
