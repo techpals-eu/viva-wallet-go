@@ -6,24 +6,40 @@ on:
       - "**"
 
 jobs:
+  # Each staticcheck release needs a minimum Go to build (v0.8.x needs 1.26), so every Go
+  # version gets the newest release it can build, pinned. Never use @latest: a new release
+  # raises the floor and breaks the older rows.
   lint:
-    name: Lint
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { go: "1.26", staticcheck: v0.8.2 }
+          - { go: "1.25", staticcheck: v0.7.0 }
+          - { go: "1.24", staticcheck: v0.6.1 }
+          - { go: "1.23", staticcheck: v0.6.1 }
+          - { go: "1.22", staticcheck: v0.5.1 }
+          - { go: "1.21", staticcheck: v0.4.7 }
+          - { go: "1.20", staticcheck: v0.4.7 }
+          - { go: "1.19", staticcheck: v0.4.7 }
+          - { go: "1.18", staticcheck: v0.3.3 }
+          - { go: "1.17", staticcheck: v0.3.3 }
+    name: "Lint: go v${{ matrix.go }}"
     steps:
       - uses: actions/checkout@v4
-      # staticcheck is pinned, and built with the Go it needs: @latest moves to newer Go
-      # releases (v0.8.2 needs go 1.26) and broke this job. It still checks the code against
-      # the go version in go.mod; the build and test jobs cover the old toolchains.
       - name: Setup go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
-      - name: lint
+          go-version: ${{ matrix.go }}
+      - name: staticcheck ${{ matrix.staticcheck }}
         run: |
-          go install honnef.co/go/tools/cmd/staticcheck@v0.8.2 &&
-          $HOME/go/bin/staticcheck &&
-          make vet
+          go install honnef.co/go/tools/cmd/staticcheck@${{ matrix.staticcheck }}
+          "$(go env GOPATH)/bin/staticcheck" ./...
+      - name: vet
+        run: make vet
       - name: Root module stays dependency-free
+        if: matrix.go == '1.26'
         # The module list, not `go list -deps`: the latter includes the standard library's
         # own vendored golang.org/x packages and is never empty.
         run: |
