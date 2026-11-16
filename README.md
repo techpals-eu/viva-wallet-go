@@ -31,6 +31,10 @@ viva-wallet is an SDK for connecting to the payment provider Viva Wallet develop
   - [Retrieve webhook key](https://developer.viva.com/apis-for-payments/payment-api/#tag/Webhooks/paths/~1api~1messages~1config~1token/get) — `BasicAuthClient.GetWebhookVerificationKey`
   - [Retrieve webhook key for ISV](https://developer.viva.com/isv-partner-program/payment-isv-api/#tag/Webhooks/paths/~1isv~1v1~1webhooks~1token/get) — `ISVClient.GetWebhookVerificationKey`
   - Payloads: [Transaction Payment Created](https://developer.viva.com/webhooks-for-payments/transaction-payment-created/), [Transaction Reversal Created](https://developer.viva.com/webhooks-for-payments/transaction-reversal-created/), [Transaction Failed](https://developer.viva.com/webhooks-for-payments/transaction-failed/), [Account Connected](https://developer.viva.com/webhooks-for-payments/account-connected/), [Account Verification Status Changed](https://developer.viva.com/webhooks-for-payments/account-verification-status-changed/) — `ParseWebhook`
+- [Fiscalisation, Greece (ΑΑΔΕ myDATA)](https://developer.viva.com/viva-fiscalisation/fiscalisation-isv/)
+  - [Sign receipt (ISV)](https://developer.viva.com/viva-fiscalisation/greece/fiscalisation_for_online_sales/) — `ISVClient.SignReceipt`, `StartFiscalQueue`, `ZeroReceipt`
+  - [Sign receipt (merchant)](https://developer.viva.com/viva-fiscalisation/greece/fiscalisation_for_online_sales/) — `OAuthClient.SignReceipt`
+  - [Fiscalised terminal sale / refund](https://developer.viva.com/apis-for-point-of-sale/card-terminals-devices/rest-api/eft-pos-api-documentation/#tag/Make-Transactions) — `ECRSaleRequest.FiscalisationData`, `ECRSession.FiscalisationDetails`
 
 
 # Usage
@@ -152,7 +156,12 @@ isvClient := vivawallet.NewISV(resellerID, resellerAPIKey, clientID, clientSecre
     vivawallet.WithScope("urn:viva:payments:core:api:isv urn:viva:payments:core:api:redirectcheckout"))
 ```
 
-The EFT POS API needs a different scope, so give it its own `ISVClient`.
+The EFT POS API needs a different scope, so give it its own `ISVClient`:
+
+```golang
+ecrClient := vivawallet.NewISV(resellerID, resellerAPIKey, clientID, clientSecret, true,
+    vivawallet.WithScope("urn:viva:payments:ecr:api"))
+```
 
 With no `WithScope`, the token request carries no `scope` parameter, which is what the plain
 payments flow expects.
@@ -201,6 +210,165 @@ r.Any("/webhooks/viva", h.Handle)
 ```
 
 `ginviva` is versioned on its own, with tags of the form `ginviva/v1.2.0`.
+
+### Greek fiscalisation (ΑΑΔΕ myDATA)
+
+> **Status:** built from Viva's documentation and tested offline against its published
+> samples. It has not yet been run against Viva's demo environment. Open points are listed in
+> [plans/25-greek-fiscalisation.md](plans/25-greek-fiscalisation.md).
+
+Viva fiscalises receipts for the merchant: it signs them and transmits them to myDATA. Your
+system has three jobs:
+
+1. **Number each receipt.** Each receipt carries its own Series and AA (sequence number).
+   AA must increase within a Series and is never reused. Viva does not assign it, and the
+   SDK cannot, because it has no storage.
+2. **Send the receipt.** For a card payment, it goes with the terminal sale. For cash and
+   online payments, it goes on its own.
+3. **Print the result.** Print every signature Viva returns, a transmission-failure note if
+   there is one, and a QR code you generate yourself.
+
+**Before the first receipt**, Viva must enable fiscalisation for the merchant. Send them the
+Merchant ID and ΑΦΜ; the account also needs the AllowFiscalization role. Then initialise the
+merchant's fiscal queue once:
+
+```golang
+if _, err := isvClient.StartFiscalQueue(merchantID); err != nil {
+    if vivawallet.IsFiscalisationNotEnabled(err) {
+        // Viva has not finished onboarding this merchant: contact Viva
+    }
+    return err
+}
+```
+
+Until then, every receipt fails with an error that `vivawallet.IsFiscalQueueNotStarted`
+recognises. `ZeroReceipt(merchantID)` is a health check. It creates no document, and
+`result.State.Ready()` reports whether the queue can sign. Send one after onboarding or at the
+start of the day, not per transaction.
+
+#### Building a receipt
+
+`GRReceipt` builds a retail receipt from lines and payments. It sets the receipt type, the
+total and `HashPayload`, and checks that the lines and payments add up. All amounts are in
+cents. Quantities and VAT rates are ×100.
+
+```golang
+sale := vivawallet.GRReceipt{
+    MerchantVATID: afm, Series: "A", AA: 123, // AA: your next number in this series
+    Reference: "rcpt-000123",                 // unique in your system
+    Moment:    time.Now(),
+    Lines: []vivawallet.ChargeItem{{
+        Amount: 1240, Description: "Pizza",
+        Quantity:  100,  // 1 item
+        VATRate:   2400, // 24%
+        VATAmount: 240,
+        FTChargeItemCase: vivawallet.GRChargeItemCase(
+            vivawallet.GRVATNatureUsual, vivawallet.GRServiceGoods, vivawallet.GRVATNormal, 0),
+    }},
+    Payments: []vivawallet.PayItem{{
+        Amount: 1240, Description: "Card",
+        FTPayItemCase: vivawallet.GRPayItemCase(vivawallet.GRPaymentEFTPOS, 0), // GRPaymentCash for cash
+    }},
+}
+receipt, err := sale.Sale() // 11.1; use GRServiceOther lines for services (11.2)
+```
+
+`OnlineSale()` builds the receipt for a Smart Checkout sale. `Return()` builds an 11.4 return
+from the same description of what was sold.
+
+Receipts signed at the time of sale use no receipt flags. `ReceiptFlagCustomNumbered` is only
+for receipts issued offline during an outage and sent for signing afterwards. Viva's samples
+set it everywhere, but Viva confirmed that normal receipts don't use it. To assemble
+`FiscalisationData` by hand instead, use `GRReceiptCase` and `GRHashPayload`.
+
+#### Card payment at a terminal
+
+Attach the receipt to the sale. The terminal takes the payment and Viva fiscalises the receipt
+in the same transaction:
+
+```golang
+err = ecrClient.Sale(vivawallet.ECRSaleRequest{
+    SessionID: sessionID, TerminalID: "16013000", CashRegisterID: "desk-1",
+    Amount: 1240, TipAmount: 100, // the tip stays outside Amount and outside the receipt
+    CurrencyCode: vivawallet.ECRCurrencyEUR, MerchantReference: bookingNumber,
+    FiscalisationData: &receipt,
+})
+// ...poll GetSession(sessionID) as above, then:
+fiscal := session.FiscalisationDetails // nil if the merchant is not fiscalised
+```
+
+The terminal rejects receipts on pre-authorisations.
+
+Viva says the terminal and its backend manage the receipt numbering (Series/AA) for terminal
+sales. Viva's terminal samples still send `ftReceiptCaseData.GR`, so keep sending it until the
+demo run shows whether the terminal uses or overrides it.
+
+#### Cash and online payments
+
+Sign the receipt directly. The session id makes a retry safe: after a timeout, call again with
+the **same** session id and receipt, and Viva returns the stored result instead of signing a
+second time. Store the session id before the first attempt.
+
+```golang
+sessionID, err := vivawallet.NewFiscalSessionID() // a UUID v4, which this endpoint requires
+// ...store sessionID with the receipt...
+fiscal, err := isvClient.SignReceipt(merchantID, sessionID, receipt)
+```
+
+`merchantID` is the same merchant id the ISV order and terminal calls take. The ISV client's
+existing token works, because fiscalisation needs no extra OAuth scope.
+
+For a Smart Checkout payment, sign the receipt once the payment succeeds, for example on the
+Transaction Payment Created webhook. Set the pay item's `TransactionID` to the event's
+`TransactionID`, and use the receipt type `GRReceiptECommerce`. Fiscalisation of online sales
+is in beta at Viva.
+
+#### Printing the result
+
+```golang
+for _, sig := range fiscal.Signatures { // in the order received
+    printLine(sig.Caption)
+    printAs(sig.Format, sig.Data) // SignatureFormatText, SignatureFormatQRCode, ...
+}
+if note := fiscal.Transmission().String(); note != "" {
+    printLine(note) // "TRANSMISSION_FAILURE_1" / "_2": Viva retransmits later
+}
+printQR(vivawallet.GRReceiptQRURL(isvClient.Config, hashPayload)) // always, even on failure
+```
+
+`fiscal.Mark()` returns the receipt's ΑΑΔΕ MARK. Store it, because a return references it.
+
+#### Returns
+
+Describe what is being returned with positive amounts, as sold. `Return()` negates the
+amounts, sets the refund flags, and switches card payments to the card-refund payment type
+(PP 04) that Viva expects. To link the return to the original, give the original's MARK or
+reference:
+
+```golang
+ret := sale                                   // the lines and payments being returned
+ret.Series, ret.AA, ret.Reference = "R", 17, "ret-000017"
+ret.Moment = time.Now()
+ret.PreviousMarks = vivawallet.InvoiceMarks{400001948544829} // or:
+// ret.PreviousReferences = vivawallet.ReceiptReferences{"rcpt-000123"}
+receipt, err := ret.Return()
+```
+
+The hash amount is then negative, for example `…Z--12.4`. Send a card refund through the
+terminal with `ECRRefundRequest.FiscalisationData`, or sign it with `SignReceipt`.
+
+#### Trying it against the demo
+
+`example/fiscal` runs each step against Viva's demo environment and prints the full results,
+including error bodies. It takes credentials from environment variables, which are listed at
+the top of the file:
+
+```sh
+make fiscal-demo STEP=start          # once per merchant
+make fiscal-demo STEP=zero           # is the queue ready?
+make fiscal-demo STEP=cash AA=1      # a cash receipt via SignReceipt
+make fiscal-demo STEP=terminal AA=2  # a card sale on the terminal, fiscalised
+```
 
 ### Typed transaction status and order state
 
