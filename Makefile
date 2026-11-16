@@ -22,7 +22,13 @@ test-verbose:
 example:
 	go run ./example
 
+# fiscal-demo runs one step of the Greek fiscalisation flow against the Viva DEMO API, e.g.
+#   make fiscal-demo STEP=zero        (start | zero | cash | terminal; cash and terminal need AA=n)
+# Credentials come from the environment; see example/fiscal/main.go for the variables.
+fiscal-demo:
+	go run ./example/fiscal -step $(STEP) $(if $(AA),-aa $(AA))
+
 vet:
 	go vet ./...
 
-.PHONY: clean-example test test-verbose example
+.PHONY: clean-example test test-verbose example fiscal-demo
