@@ -55,20 +55,10 @@ func NewISV(resellerID, resellerAPIKey, clientID, clientSecret string, demo bool
 }
 
 // isvBasicAuth returns the username and password for a basic-auth call made on behalf of
-// merchantID. Viva documents the ISV credentials as "Reseller ID + Merchant ID + Reseller
-// API Key" without spelling out how the three map onto the two basic-auth fields.
-//
-// Both candidate compositions — username "resellerID:merchantID" with password
-// "resellerAPIKey", or username "resellerID" with password "merchantID:resellerAPIKey" —
-// encode to the *same* Authorization header, since basic auth is the base64 of
-// "username:password" and a server splits the decoded value on the first colon. The
-// ordering resellerID:merchantID:resellerAPIKey is therefore the only thing that has to be
-// right, and it matches the order Viva's docs list the credentials in.
-//
-// It is still isolated here so that correcting the order against a live demo call, should
-// it turn out to differ, is a one-line change.
+// merchantID: username "resellerID:merchantID", password "resellerAPIKey", as documented in
+// Viva's ISV API spec (https://developer.viva.com/downloads/payment-isv-api.yaml).
 func isvBasicAuth(c Config, merchantID string) (username, password string) {
-	return c.ResellerID, merchantID + ":" + c.ResellerAPIKey
+	return c.ResellerID + ":" + merchantID, c.ResellerAPIKey
 }
 
 // ISVBasicAuth returns the base64-encoded basic-auth credential an ISV call for merchantID

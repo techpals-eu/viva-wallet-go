@@ -20,6 +20,31 @@ jobs:
           go install honnef.co/go/tools/cmd/staticcheck@latest &&
           $HOME/go/bin/staticcheck &&
           make vet
+      - name: Root module stays dependency-free
+        # The module list, not `go list -deps`: the latter includes the standard library's
+        # own vendored golang.org/x packages and is never empty.
+        run: |
+          go list -m all
+          [ "$(go list -m all | wc -l)" -eq 1 ]
+
+  # ginviva is its own module (it requires gin, which needs go 1.20+), so the root jobs above
+  # never build it: `./...` does not descend into a directory with its own go.mod.
+  ginviva:
+    name: "ginviva: go v1.20"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ginviva
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.20"
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test -race ./...
 
   build:
      runs-on: ubuntu-latest
