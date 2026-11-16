@@ -1,0 +1,42 @@
+{
+  "ftReceiptCase": 5139205309172547585,
+  "ftReceiptCaseData": {
+    "GR": {
+      "MerchantVATID": "099565360",
+      "Series": "ABCX",
+      "AA": 12233243215123,
+      "HashAlg": "sha256",
+      "HashPayload": "099565360-ABCX-12233243215123-refundinvoice2125132-2026-02-05T15:22:07Z--124.0",
+      "PreviousReceiptReference": {
+        "invoiceMark": 400001962634793
+      }
+    }
+  },
+  "cbReceiptReference": "refundinvoice2125132",
+  "cbPreviousReceiptReference": "Delivery_Note150123",
+  "cbReceiptMoment": "2026-02-05T15:22:07Z",
+  "currencyCode": "978",
+  "cbChargeItems": [
+    {
+      "quantity": -100,
+      "description": "Couch",
+      "amount": -12400,
+      "vatRate": 2400,
+      "ftChargeItemCase": 5139205309155377171,
+      "vatAmount": -2400,
+      "currencyCode": "978",
+      "moment": "2026-02-05T15:22:07Z",
+      "position": 1
+    }
+  ],
+  "cbPayItems": [
+    {
+      "description": "Cash",
+      "amount": -12400,
+      "ftPayItemCase": 5139205309155377156,
+      "currencyCode": "978",
+      "moment": "2026-02-05T15:22:07Z",
+      "position": 1
+    }
+  ]
+}

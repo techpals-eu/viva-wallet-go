@@ -1,0 +1,38 @@
+{
+  "cbChargeItems": [
+    {
+      "amount": 124,
+      "description": "product x",
+      "position": 1,
+      "moment": "2025-08-27T16:11:06Z",
+      "quantity": 100,
+      "vatRate": 2400,
+      "vatAmount": 24,
+      "ftChargeItemCase": 5139205309155246115,
+      "currencyCode": "978"
+    }
+  ],
+  "cbPayItems": [
+    {
+      "amount": 124,
+      "description": "cash-payment",
+      "position": 1,
+      "currencyCode": "978",
+      "moment": "2025-08-27T16:11:06Z",
+      "ftPayItemCase": 5139205309155246081
+    }
+  ],
+  "cbReceiptMoment": "2025-08-27T16:11:06Z",
+  "cbReceiptReference": "testreceiptreference1",
+  "ftReceiptCase": 5139205309155770369,
+  "currencyCode": "978",
+  "ftReceiptCaseData": {
+    "GR": {
+      "MerchantVATID": "12345678",
+      "Series": "AB",
+      "AA": 1,
+      "HashAlg": "sha256",
+      "HashPayload": "12345678-AB-1-testreceiptreference1-2025-08-27T16:11:06Z-1.24"
+    }
+  }
+}
