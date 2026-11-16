@@ -50,6 +50,10 @@ type ECRSaleRequest struct {
 	ShowTransactionResult bool           `json:"showTransactionResult,omitempty"`
 	ShowReceipt           bool           `json:"showReceipt,omitempty"`
 	ISVDetails            *ECRISVDetails `json:"isvDetails,omitempty"`
+	// FiscalisationData fiscalises the sale as part of the payment; the result arrives in
+	// ECRSession.FiscalisationDetails. Its lines carry the sale amount only, since TipAmount
+	// stays separate. Viva rejects it on a pre-authorisation.
+	FiscalisationData *FiscalisationData `json:"fiscalisationData,omitempty"`
 }
 
 // ECRRefundRequest asks a card terminal to refund an amount to any card the customer
@@ -67,6 +71,9 @@ type ECRRefundRequest struct {
 	ShowTransactionResult bool           `json:"showTransactionResult,omitempty"`
 	ShowReceipt           bool           `json:"showReceipt,omitempty"`
 	ISVDetails            *ECRISVDetails `json:"isvDetails,omitempty"`
+	// FiscalisationData fiscalises the refund as a return receipt, with negative amounts;
+	// the result arrives in ECRSession.FiscalisationDetails.
+	FiscalisationData *FiscalisationData `json:"fiscalisationData,omitempty"`
 }
 
 // ECRSession is the state of a terminal request, as returned by GetSession.
@@ -98,6 +105,10 @@ type ECRSession struct {
 	AbortOperation           bool   `json:"abortOperation"`
 	AbortSuccess             bool   `json:"abortSuccess"`
 	AbortAckTime             string `json:"abortAckTime"`
+	// FiscalisationDetails is the fiscal result of a sale or refund sent with
+	// FiscalisationData, and nil otherwise. Print its signatures, and the QR code from
+	// GRReceiptQRURL, on the receipt.
+	FiscalisationDetails *FiscalResult `json:"fiscalisationDetails,omitempty"`
 }
 
 // NewSessionID returns a random session id for an EFT POS request: 32 hex characters from
