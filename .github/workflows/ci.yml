@@ -37,8 +37,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_LATEST }}
           cache-dependency-path: "**/go.sum"
@@ -67,8 +67,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_LATEST }}
           cache-dependency-path: "**/go.sum"
@@ -89,8 +89,8 @@ jobs:
       matrix:
         go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20", "1.19", "1.18", "1.17"]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
       - name: Vet
@@ -105,7 +105,7 @@ jobs:
           total="$(go tool cover -func=coverage.out | tail -1 | awk '{print $NF}')"
           echo "Total coverage: $total"
           echo "### Coverage: $total" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: matrix.go == env.GO_LATEST
         with:
           name: coverage
@@ -125,8 +125,8 @@ jobs:
       run:
         working-directory: ginviva
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
           cache-dependency-path: ginviva/go.sum
