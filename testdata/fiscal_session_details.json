@@ -1,0 +1,14 @@
+{
+  "ftState": "5139205309155246080",
+  "ftReceiptIdentification": "ft5#0-5",
+  "ftCashBoxIdentification": "fiskaltrust1",
+  "ftSignatures": [
+    {"caption": "invoiceUid", "data": "FDF3F4414097B4786363FA8A70A98653CFC92B0C", "ftSignatureType": "5139205309155246099", "ftSignatureFormat": 1},
+    {"caption": "invoiceMark", "data": "400001948544829", "ftSignatureType": "5139205309155246100", "ftSignatureFormat": 1},
+    {"caption": "authenticationCode", "data": "D4824EB973D3E0E2A802FC0FF55B1283F22A8629", "ftSignatureType": "5139205309155246101", "ftSignatureFormat": 1},
+    {"caption": "[www.fiskaltrust.gr]", "data": "https://receipts-sandbox.fiskaltrust.eu/8c0a4594-ab69-43bb-a7ef-ebc4bef51494/8abf2ada-afa8-4616-a07a-562dbe1ee211", "ftSignatureType": "5139205309155246081", "ftSignatureFormat": 3},
+    {"caption": "", "data": "https://r-sb.ft.ms/HinD6xqaRL7Hhlm9XD__CYb7_NHPWQlnOihg3955qTU", "ftSignatureFormat": 2},
+    {"caption": "Μοναδικός αριθμός παραστατικού", "data": "112545020|27/03/2025|0|Item113|0|128", "ftSignatureType": "5139205309155246098", "ftSignatureFormat": 1}
+  ],
+  "transmissionIndicator": 0
+}

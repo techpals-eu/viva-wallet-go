@@ -1,0 +1,16 @@
+{
+  "ftState": 5139205309155246080,
+  "ftStateData": null,
+  "ftReceiptIdentification": "ft814#",
+  "ftCashBoxIdentification": "fiskaltrust1",
+  "ftSignatures": [
+    {
+      "data": "20b802e1-0d40-4c8a-b9bd-69138bba90aa",
+      "caption": "S A N D B O X",
+      "ftSignatureType": 0,
+      "ftSignatureItemId": null,
+      "ftSignatureFormat": 1
+    }
+  ],
+  "transmissionIndicator": 0
+}
