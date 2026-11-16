@@ -20,13 +20,187 @@ viva-wallet is an SDK for connecting to the payment provider Viva Wallet develop
 - [Wallet](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Balance-Transfer)
   - [Balance Tranfer](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Balance-Transfer)
   - [Retrieve Wallets](https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Retrieve-Wallet)
+- [ISV Payments](https://developer.viva.com/isv-partner-program/payment-isv-api/)
+  - [Create](https://developer.viva.com/isv-partner-program/payment-isv-api/) — `CreateISVOrder`
+  - [Retrieve](https://developer.viva.com/isv-partner-program/payment-isv-api/#tag/Payments/paths/~1api~1orders~1{order_code}/get) — `GetISVOrder`
+- [EFT POS Cloud REST (ISV)](https://developer.viva.com/apis-for-point-of-sale/card-terminals-devices/rest-api/eft-pos-api-documentation/)
+  - [Sale](https://developer.viva.com/apis-for-point-of-sale/card-terminals-devices/rest-api/eft-pos-api-documentation/#tag/Make-Transactions/paths/~1ecr~1isv~1v1~1transactions:sale/post) — `Sale`
+  - [Refund](https://developer.viva.com/apis-for-point-of-sale/card-terminals-devices/rest-api/eft-pos-api-documentation/#tag/Make-Transactions/paths/~1ecr~1isv~1v1~1transactions:refund/post) — `Refund`
+  - [Retrieve Session](https://developer.viva.com/apis-for-point-of-sale/card-terminals-devices/rest-api/eft-pos-api-documentation/#tag/Session-Details/paths/~1ecr~1isv~1v1~1sessions~1{sessionId}/get) — `GetSession`
+- [Webhooks](https://developer.viva.com/webhooks-for-payments/)
+  - [Retrieve webhook key](https://developer.viva.com/apis-for-payments/payment-api/#tag/Webhooks/paths/~1api~1messages~1config~1token/get) — `BasicAuthClient.GetWebhookVerificationKey`
+  - [Retrieve webhook key for ISV](https://developer.viva.com/isv-partner-program/payment-isv-api/#tag/Webhooks/paths/~1isv~1v1~1webhooks~1token/get) — `ISVClient.GetWebhookVerificationKey`
+  - Payloads: [Transaction Payment Created](https://developer.viva.com/webhooks-for-payments/transaction-payment-created/), [Transaction Reversal Created](https://developer.viva.com/webhooks-for-payments/transaction-reversal-created/), [Transaction Failed](https://developer.viva.com/webhooks-for-payments/transaction-failed/), [Account Connected](https://developer.viva.com/webhooks-for-payments/account-connected/), [Account Verification Status Changed](https://developer.viva.com/webhooks-for-payments/account-verification-status-changed/) — `ParseWebhook`
 
 
 # Usage
 
-There are 2 types of clients, one using basic authentication mechanism and another
-using OAuth. This is due to the implementation of the API itself, meaning that
-different API calls are using different type of authenication, hence this is unavoidable.
+There are 3 types of clients, one using basic authentication mechanism, another
+using OAuth, and a third for ISV partners. This is due to the implementation of the API
+itself, meaning that different API calls are using different type of authenication, hence
+this is unavoidable.
+
+### ISV partner client
+
+`ISVClient` serves Viva's [ISV Partner APIs](https://developer.viva.com/isv-partner-program/payment-isv-api/).
+An ISV acts on behalf of many merchants, so the merchant id is an argument to each call
+rather than client state — one client is safe to share across goroutines serving different
+merchants:
+
+```golang
+isvClient := vivawallet.NewISV(resellerID, resellerAPIKey, clientID, clientSecret, true)
+
+// Bearer-token endpoints (/checkout/v2/isv/*) use the ISV's OAuth credentials. The token
+// is fetched and refreshed automatically; Authenticate is only needed to fail fast.
+
+// Basic-auth endpoints (/api/*) carry the merchant the call is made for.
+var order GetOrderPaymentResponse
+err := isvClient.GetWithMerchant(merchantID, uri, &order)
+```
+
+The basic-auth credential is composed as Viva's ISV API spec documents it: username
+`resellerID:merchantID`, password `resellerAPIKey`.
+
+#### Taking a payment as an ISV
+
+Create the order, redirect the customer to Smart Checkout, then find out how it went:
+
+```golang
+order, err := isvClient.CreateISVOrder(merchantID, vivawallet.ISVCheckoutOrder{
+    Amount:               1000, // minor units: €10.00
+    ISVAmount:            50,   // your commission; must not exceed Amount
+    CustomerTransactions: "Coffee",
+    Customer:             &vivawallet.Customer{Email: "customer@example.com", RequestLang: "el-GR"},
+    CurrencyCode:         vivawallet.CurrencyEUR,
+    PaymentTimeout:       600, // seconds
+    DisableCash:          true,
+})
+if err != nil {
+    return err
+}
+
+http.Redirect(w, r, vivawallet.SmartCheckoutURL(isvClient.Config, order.OrderCode,
+    vivawallet.WithColor("#d5791a")), http.StatusFound)
+```
+
+`CreateISVOrder` returns an error without calling the API when `ISVAmount` exceeds `Amount`.
+`WithColor` takes the hex value with or without a leading `#`.
+
+`GetISVOrder` fetches the order once. The SDK does not poll for you; Viva recommends checking
+every 3 seconds until the order leaves `OrderStatePending`, giving up after the order's
+`PaymentTimeout` (10 minutes above). Own that loop so you can cancel it — and prefer
+webhooks where you can:
+
+```golang
+ticker := time.NewTicker(3 * time.Second)
+defer ticker.Stop()
+for {
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    case <-ticker.C:
+        op, err := isvClient.GetISVOrder(merchantID, order.OrderCode)
+        if err != nil {
+            return err
+        }
+        if op.StateID != vivawallet.OrderStatePending {
+            return handle(op.StateID) // OrderStatePaid, OrderStateExpired, ...
+        }
+    }
+}
+```
+
+#### Taking a payment on a card terminal
+
+The EFT POS API is asynchronous: `Sale` returns once Viva accepts the request, and the
+outcome arrives only when the customer finishes at the terminal. It needs a token with its
+own OAuth scope, so use a separate `ISVClient` created with that scope (see below):
+
+```golang
+sessionID, err := vivawallet.NewSessionID() // or any unique id of your own
+if err != nil {
+    return err
+}
+
+err = ecrClient.Sale(vivawallet.ECRSaleRequest{
+    SessionID:         sessionID,
+    TerminalID:        "16013000",
+    CashRegisterID:    "desk-1",
+    Amount:            734, // €7.34, excluding the tip
+    TipAmount:         100, // charged on top of Amount — do not add it to Amount too
+    CurrencyCode:      vivawallet.ECRCurrencyEUR, // "978": a string here, unlike orders
+    MerchantReference: bookingNumber,
+    CustomerTrns:      "Room 12",
+    ShowReceipt:       true,
+})
+```
+
+Then poll `GetSession(sessionID)` — Viva recommends every 3 seconds, for up to 3 minutes — in
+a loop you own and can cancel, as with `GetISVOrder` above.
+
+Do not treat `Success == false` as proof the customer was not charged: Viva has been reported
+returning it for sessions that settled
+([VivaPayments/API#2461](https://github.com/VivaPayments/API/issues/2461)). Before refunding
+or re-charging, confirm through the payment webhooks, matching on `TransactionID` or
+`OrderCode`.
+
+Viva's ISV and EFT POS flows use scoped OAuth tokens. Pass the scope at construction. For
+ISV orders and ISV webhooks it is, per Viva's ISV API spec:
+
+```golang
+isvClient := vivawallet.NewISV(resellerID, resellerAPIKey, clientID, clientSecret, true,
+    vivawallet.WithScope("urn:viva:payments:core:api:isv urn:viva:payments:core:api:redirectcheckout"))
+```
+
+The EFT POS API needs a different scope, so give it its own `ISVClient`.
+
+With no `WithScope`, the token request carries no `scope` parameter, which is what the plain
+payments flow expects.
+
+### Webhooks
+
+Viva notifies your endpoint of payments with a `POST`, and verifies you own the endpoint
+with a `GET` on the *same URL*, which must return the key from `GetWebhookVerificationKey`
+(`BasicAuthClient` for merchant webhooks, `ISVClient` for ISV ones). Viva will not activate
+a webhook until that `GET` works.
+
+`ParseWebhook` decodes the envelope only, so event types the SDK does not know still parse.
+Then use the accessor for the event:
+
+```golang
+event, err := vivawallet.ParseWebhook(body)
+if err != nil {
+    return err // malformed: answer 400
+}
+switch event.EventTypeID {
+case vivawallet.EventTransactionPaymentCreated:
+    data, err := event.TransactionPaymentCreated()
+    // data.OrderCode, data.TransactionID, data.StatusID, data.Amount (decimal euros) ...
+}
+```
+
+Viva can deliver an event more than once: deduplicate on `event.MessageID`. Any non-2xx
+answer is retried hourly for a day, so acknowledge event types you do not handle with 200.
+
+#### Gin
+
+Gin applications can use the `ginviva` module, which serves both the verification `GET`
+(fetching the key once and caching it) and event delivery on one route. It is a separate
+module so the SDK itself stays dependency-free; it needs go 1.20+.
+
+```golang
+import "github.com/techpals-eu/viva-wallet-go/ginviva"
+
+h := ginviva.NewHandler(isvClient, ginviva.Config{
+    OnPaymentCreated: func(c *gin.Context, d *vivawallet.TransactionEventData) error {
+        // Return only once the event is stored; an error answers 500 and Viva redelivers.
+        return payments.MarkPaid(c, d.OrderCode, d.TransactionID)
+    },
+})
+r.Any("/webhooks/viva", h.Handle)
+```
+
+`ginviva` is versioned on its own, with tags of the form `ginviva/v1.2.0`.
 
 ### Typed transaction status and order state
 
@@ -129,18 +303,6 @@ oauthClient := vivawallet.NewOAuth(clientID, clientSecret, true)
 token, err := oauthClient.Authenticate()
 
 trx, err2 := oauthClient.GetTransaction("some-transaction-id")
-```
-
-### Create card token
-
-```golang
-oauthClient := vivawallet.NewOAuth(clientID, clientSecret, true)
-token, err := oauthClient.Authenticate()
-
-createCardToken := CreateCardToken{
-		TransactionID: "some-trx-id",
-}
-cardToken, err2 := CreateCardToken(cardToken)
 ```
 
 For more examples check out: [main.go](./example/main.go)

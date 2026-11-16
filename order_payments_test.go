@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -127,5 +128,32 @@ func TestCancelOrderPaymentPropagatesAPIError(t *testing.T) {
 	}
 	if apiErr.ErrorCode != 1013 {
 		t.Errorf("ErrorCode = %d, want 1013", apiErr.ErrorCode)
+	}
+}
+
+func TestCheckoutOrderCustomerJSON(t *testing.T) {
+	withCustomer, err := json.Marshal(CheckoutOrder{Amount: 1, Customer: Customer{Email: "a@example.com"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `"customer":{"email":"a@example.com"}`; !strings.Contains(string(withCustomer), want) {
+		t.Errorf("marshal = %s, want it to contain %s", withCustomer, want)
+	}
+
+	// Customer is a value field, so an unset one is still emitted as {}; this pins that
+	// behaviour until it becomes a pointer in v2.
+	without, err := json.Marshal(CheckoutOrder{Amount: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `"customer":{}`; !strings.Contains(string(without), want) {
+		t.Errorf("marshal = %s, want it to contain %s", without, want)
+	}
+}
+
+func TestCancelOrderPaymentAliasCompiles(t *testing.T) {
+	var old *CancelOrderPayment = &CancelOrderPaymentResponse{OrderCode: 1}
+	if old.OrderCode != 1 {
+		t.Fatal("alias does not denote CancelOrderPaymentResponse")
 	}
 }

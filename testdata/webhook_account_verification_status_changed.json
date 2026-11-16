@@ -1,0 +1,18 @@
+{
+  "Url": "Your webhook URL",
+  "EventData": {
+    "Verified":false,
+    "PersonId":"1aabc6f0-b419-4be5-b898-12345f4c912f",
+    "PlatformPersonId":"faa1a888-5651-4bdf-6565-4f41c730a321",
+    "ConnectedAccountId":"592d2e2f-11ec-408b-8552-ea06af1d1eee"
+  },
+  "Created": "2021-05-26T00:01:20.4752112Z",
+  "CorrelationId": "22-146-51FB37AA",
+  "EventTypeId": 8194,
+  "Delay": null,
+  "RetryCount": 0,
+  "RetryDelayInSeconds": null,
+  "MessageId": "82606171-a5a3-4330-8a86-548b1111f451",
+  "RecipientId": "11ac9cd4-c9ea-48d3-b414-1f10ce999aad",
+  "MessageTypeId": 512
+}

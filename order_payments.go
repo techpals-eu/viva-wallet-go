@@ -10,13 +10,9 @@ import (
 type CheckoutOrder struct {
 	Amount               int64  `json:"amount"`
 	CustomerTransactions string `json:"customerTrns,omitempty"`
-	Customer             struct {
-		Email       string `json:"email,omitempty"`
-		FullName    string `json:"fullName,omitempty"`
-		Phone       string `json:"phone,omitempty"`
-		CountryCode string `json:"countryCode,omitempty"`
-		RequestLang string `json:"requestLang,omitempty"`
-	} `json:"customer,omitempty"`
+	// Customer is a value, not a pointer, to stay source-compatible with the anonymous struct
+	// it replaced; an unset customer is therefore still sent as "customer":{}.
+	Customer             Customer `json:"customer,omitempty"`
 	PaymentTimeout       int      `json:"paymentTimeout,omitempty"`
 	PreAuth              bool     `json:"preauth,omitempty"`
 	AllowRecurring       bool     `json:"allowRecurring,omitempty"`
@@ -117,7 +113,8 @@ func getOrderPaymentUri(c Config, orderCode int64) string {
 	return fmt.Sprintf("%s/api/orders/%d", AppUri(c), orderCode)
 }
 
-type CancelOrderPayment struct {
+// CancelOrderPaymentResponse is the result of CancelOrderPayment.
+type CancelOrderPaymentResponse struct {
 	OrderCode     int64     `json:"OrderCode"`
 	ErrorCode     int       `json:"ErrorCode"`
 	ErrorText     string    `json:"ErrorText"`
@@ -127,12 +124,17 @@ type CancelOrderPayment struct {
 	Success       bool      `json:"Success"`
 }
 
+// CancelOrderPayment is the former name of CancelOrderPaymentResponse.
+//
+// Deprecated: use CancelOrderPaymentResponse.
+type CancelOrderPayment = CancelOrderPaymentResponse
+
 // CancelOrderPayment cancels an existing order payment
 // Ref: https://developer.vivawallet.com/apis-for-payments/payment-api/#tag/Payments-(Deprecated)/paths/~1api~1orders~1{orderCode}/delete
-func (c BasicAuthClient) CancelOrderPayment(orderCode int64) (*CancelOrderPayment, error) {
+func (c BasicAuthClient) CancelOrderPayment(orderCode int64) (*CancelOrderPaymentResponse, error) {
 	uri := deleteOrderPaymentUri(c.Config, orderCode)
 
-	result := &CancelOrderPayment{}
+	result := &CancelOrderPaymentResponse{}
 	reqErr := c.Delete(uri, nil, result)
 	if reqErr != nil {
 		return nil, reqErr

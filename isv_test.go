@@ -11,17 +11,14 @@ import (
 	"testing"
 )
 
-// TestISVBasicAuthComposition pins the three-part basic-auth composition. Viva documents the
-// ISV credentials as "Reseller ID + Merchant ID + Reseller API Key" without saying how they
-// map onto the two basic-auth fields; this test is the single place the chosen mapping is
-// asserted. What goes on the wire is the base64 of "username:password", so only the order of
-// the three parts is observable; correcting it means changing isvBasicAuth and this test.
+// TestISVBasicAuthComposition pins the three-part basic-auth composition documented in Viva's
+// ISV API spec: username "Reseller ID:Merchant ID", password "Reseller API Key".
 func TestISVBasicAuthComposition(t *testing.T) {
 	cfg := Config{ResellerID: "reseller-1", ResellerAPIKey: "secret-key"}
 
 	username, password := isvBasicAuth(cfg, "merchant-9")
-	if username+":"+password != "reseller-1:merchant-9:secret-key" {
-		t.Errorf("credential = %q, want %q", username+":"+password, "reseller-1:merchant-9:secret-key")
+	if username != "reseller-1:merchant-9" || password != "secret-key" {
+		t.Errorf("username/password = %q/%q, want %q/%q", username, password, "reseller-1:merchant-9", "secret-key")
 	}
 
 	want := base64.StdEncoding.EncodeToString([]byte("reseller-1:merchant-9:secret-key"))
