@@ -2,100 +2,147 @@ name: CI
 
 on:
   push:
-    branches:
-      - "**"
+    branches: ["**"]
+  pull_request:
+  # Lets release.yml run the exact same checks against a tag before publishing it.
+  workflow_call:
+  # Weekly run so a newly published vulnerability or Go point release surfaces even when
+  # nobody pushes.
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Superseded pushes to a branch are cancelled; main and tags always finish.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  # The newest Go, used for the single-run jobs. setup-go resolves it to the latest patch.
+  GO_LATEST: "1.26"
+  STATICCHECK: v0.8.2 # needs go >= 1.26 to build; bump together with GO_LATEST
+  GOVULNCHECK: v1.1.4
 
 jobs:
-  # Each staticcheck release needs a minimum Go to build (v0.8.x needs 1.26), so every Go
-  # version gets the newest release it can build, pinned. Never use @latest: a new release
-  # raises the floor and breaks the older rows.
+  # Static analysis runs once, on the newest Go. staticcheck already honours the `go 1.17`
+  # directive in go.mod, and "does this compile on 1.17" is answered by the test matrix, so
+  # linting on every version only repeated the same findings ten times.
   lint:
+    name: Lint
+    # Branch pushes already run CI; only run pull_request events for PRs from forks, so a PR
+    # from a branch in this repo does not run everything twice.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_LATEST }}
+          cache-dependency-path: "**/go.sum"
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::Files need gofmt:"; echo "$unformatted"; exit 1
+          fi
+      - name: go mod tidy
+        run: |
+          go mod tidy -diff
+          (cd ginviva && go mod tidy -diff)
+      - name: Root module stays dependency-free
+        # The module list, not `go list -deps`: the latter includes the standard library's
+        # own vendored golang.org/x packages and is never empty.
+        run: '[ "$(go list -m all | wc -l)" -eq 1 ] || { go list -m all; exit 1; }'
+      - name: staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@${STATICCHECK}
+          "$(go env GOPATH)/bin/staticcheck" ./...
+          (cd ginviva && "$(go env GOPATH)/bin/staticcheck" ./...)
+
+  vulncheck:
+    name: govulncheck
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_LATEST }}
+          cache-dependency-path: "**/go.sum"
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK}
+          "$(go env GOPATH)/bin/govulncheck" ./...
+          (cd ginviva && "$(go env GOPATH)/bin/govulncheck" ./...)
+
+  # The compatibility promise: go.mod says 1.17, so every release from 1.17 up must vet,
+  # build (including the examples) and pass the tests.
+  test:
+    name: "Test: go ${{ matrix.go }}"
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { go: "1.26", staticcheck: v0.8.2 }
-          - { go: "1.25", staticcheck: v0.7.0 }
-          - { go: "1.24", staticcheck: v0.6.1 }
-          - { go: "1.23", staticcheck: v0.6.1 }
-          - { go: "1.22", staticcheck: v0.5.1 }
-          - { go: "1.21", staticcheck: v0.4.7 }
-          - { go: "1.20", staticcheck: v0.4.7 }
-          - { go: "1.19", staticcheck: v0.4.7 }
-          - { go: "1.18", staticcheck: v0.3.3 }
-          - { go: "1.17", staticcheck: v0.3.3 }
-    name: "Lint: go v${{ matrix.go }}"
+        go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20", "1.19", "1.18", "1.17"]
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-      - name: staticcheck ${{ matrix.staticcheck }}
-        run: |
-          go install honnef.co/go/tools/cmd/staticcheck@${{ matrix.staticcheck }}
-          "$(go env GOPATH)/bin/staticcheck" ./...
-      - name: vet
-        run: make vet
-      - name: Root module stays dependency-free
-        if: matrix.go == '1.26'
-        # The module list, not `go list -deps`: the latter includes the standard library's
-        # own vendored golang.org/x packages and is never empty.
-        run: |
-          go list -m all
-          [ "$(go list -m all | wc -l)" -eq 1 ]
-
-  # ginviva is its own module (it requires gin, which needs go 1.20+), so the root jobs above
-  # never build it: `./...` does not descend into a directory with its own go.mod.
-  ginviva:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20"]
-    name: "ginviva: go v${{ matrix.go }}"
-    defaults:
-      run:
-        working-directory: ginviva
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Vet
         run: go vet ./...
+      - name: Build
+        run: go build ./...
       - name: Test
-        run: go test -race ./...
+        run: go test -race -count=1 -coverprofile=coverage.out ./...
+      - name: Coverage summary
+        if: matrix.go == env.GO_LATEST
+        run: |
+          total="$(go tool cover -func=coverage.out | tail -1 | awk '{print $NF}')"
+          echo "Total coverage: $total"
+          echo "### Coverage: $total" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: matrix.go == env.GO_LATEST
+        with:
+          name: coverage
+          path: coverage.out
 
-  build:
-     runs-on: ubuntu-latest
-     strategy:
-       matrix:
-         go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20", "1.19", "1.18", "1.17"]
-     name: "Build: go v${{ matrix.go }}"
-     steps:
-       - uses: actions/checkout@v4
-       - name: Setup go
-         uses: actions/setup-go@v5
-         with:
-           go-version: ${{ matrix.go }}
-       - name: Build
-         run: |
-           go build ./... &&
-           make build-example
+  # ginviva is its own module (it requires gin, which needs go 1.20+), so the root jobs above
+  # never build it: `./...` does not descend into a directory with its own go.mod.
+  ginviva:
+    name: "ginviva: go ${{ matrix.go }}"
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20"]
+    defaults:
+      run:
+        working-directory: ginviva
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: ginviva/go.sum
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test -race -count=1 ./...
 
-  test:
-     runs-on: ubuntu-latest
-     strategy:
-       matrix:
-         go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20", "1.19", "1.18", "1.17"]
-     name: "Test: go v${{ matrix.go }}"
-     steps:
-       - uses: actions/checkout@v4
-       - name: Setup go
-         uses: actions/setup-go@v5
-         with:
-           go-version: ${{ matrix.go }}
-       - name: Test
-         run: make test
+  # One stable check name to mark as required in branch protection, instead of listing
+  # every matrix row (which changes whenever a Go version is added or dropped).
+  ci-ok:
+    name: CI OK
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository)
+    needs: [lint, vulncheck, test, ginviva]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All jobs passed
+        run: |
+          [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "false" ]

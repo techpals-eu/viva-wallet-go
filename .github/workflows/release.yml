@@ -1,0 +1,114 @@
+name: Release
+
+# A Go module is "published" by pushing a semver tag; there is no registry upload. This
+# workflow guards the tag, re-runs CI against it, creates the GitHub release and asks the Go
+# module proxy to fetch the version so it shows up on pkg.go.dev straight away.
+#
+#   SDK:      git tag v1.1.0          (must equal the VERSION file)
+#   ginviva:  git tag ginviva/v0.1.0  (its go.mod must not carry a replace directive)
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "ginviva/v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify tag
+    runs-on: ubuntu-latest
+    outputs:
+      module: ${{ steps.tag.outputs.module }}
+      version: ${{ steps.tag.outputs.version }}
+      prerelease: ${{ steps.tag.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Parse tag
+        id: tag
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          case "$tag" in
+            ginviva/v*) module=github.com/techpals-eu/viva-wallet-go/ginviva; version="${tag#ginviva/}" ;;
+            v*)         module=github.com/techpals-eu/viva-wallet-go;         version="$tag" ;;
+          esac
+          # Strict semver, as the Go toolchain requires: vMAJOR.MINOR.PATCH[-pre][+build]
+          echo "$version" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$' \
+            || { echo "::error::$version is not a valid semver tag"; exit 1; }
+          case "$version" in *-*) pre=true ;; *) pre=false ;; esac
+          {
+            echo "module=$module"
+            echo "version=$version"
+            echo "prerelease=$pre"
+          } >> "$GITHUB_OUTPUT"
+      - name: VERSION file matches the tag
+        if: "!startsWith(github.ref_name, 'ginviva/')"
+        run: |
+          want="${{ steps.tag.outputs.version }}"
+          have="v$(tr -d '[:space:]' < VERSION)"
+          [ "$have" = "$want" ] || { echo "::error::VERSION is $have but the tag is $want"; exit 1; }
+      - name: Major version matches the module path
+        if: "!startsWith(github.ref_name, 'ginviva/')"
+        # v2+ needs a /v2 suffix in the module path, or the proxy refuses the version.
+        run: |
+          major="$(echo "${{ steps.tag.outputs.version }}" | sed -E 's/^v([0-9]+).*/\1/')"
+          if [ "$major" -ge 2 ]; then
+            grep -q "^module .*/v${major}\$" go.mod \
+              || { echo "::error::v${major} tag needs 'module .../v${major}' in go.mod"; exit 1; }
+          fi
+      - name: ginviva has no local replace
+        if: startsWith(github.ref_name, 'ginviva/')
+        # A replace directive is ignored by consumers, and v0.0.0-0001... cannot be resolved,
+        # so a ginviva tag must require a real, already-tagged SDK version.
+        run: |
+          if grep -Eq '^replace|v0\.0\.0-00010101000000' ginviva/go.mod; then
+            echo "::error::ginviva/go.mod still has the local replace / placeholder SDK version"
+            exit 1
+          fi
+
+  ci:
+    name: CI
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: GitHub release
+    needs: [verify, ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags="--verify-tag --generate-notes --title ${GITHUB_REF_NAME}"
+          if [ "${{ needs.verify.outputs.prerelease }}" = "true" ]; then
+            flags="$flags --prerelease"
+          fi
+          gh release create "${GITHUB_REF_NAME}" $flags
+
+  publish:
+    name: Warm the Go module proxy
+    needs: [verify, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: false
+      - name: Fetch through proxy.golang.org
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOFLAGS: -mod=mod
+        run: |
+          mod="${{ needs.verify.outputs.module }}@${{ needs.verify.outputs.version }}"
+          # The proxy can take a few seconds to see a brand-new tag.
+          for i in 1 2 3 4 5; do
+            if go list -m "$mod"; then exit 0; fi
+            sleep $((i * 10))
+          done
+          echo "::error::proxy.golang.org could not fetch $mod"; exit 1

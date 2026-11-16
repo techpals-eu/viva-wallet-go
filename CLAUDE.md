@@ -6,21 +6,28 @@ Guidance for Claude Code working in this repository.
 
 `github.com/techpals-eu/viva-wallet-go` — a dependency-free Go SDK (package `vivawallet`) wrapping
 the [Viva Wallet payments API](https://developer.vivawallet.com/apis-for-payments/payment-api/).
-Flat package at the repo root; stdlib only (`go.sum` is empty). Targets go 1.17; CI lints, builds and tests 1.17–1.26 (ginviva: 1.20–1.26); staticcheck is pinned per Go version in the lint matrix.
+Flat package at the repo root; stdlib only (`go.sum` is empty). Targets go 1.17. `ginviva/` is a
+separate module (gin adapter, go 1.20+).
 
 ## Commands
 
 ```sh
-make build-example   # go build -o examp ./example/main.go  — the de-facto compile check
-make vet             # go vet ./...
-make lint            # staticcheck (must be installed: go install honnef.co/go/tools/cmd/staticcheck@latest)
+make ci       # what CI's lint + test jobs run: gofmt check, go mod tidy -diff, vet, staticcheck, tests
+make test     # go test -race ./...  (offline; uses httptest)
+make lint     # staticcheck on both modules
+make vuln     # govulncheck on both modules
+make example  # live demo API; needs VIVA_CLIENT_ID, VIVA_CLIENT_SECRET, VIVA_MERCHANT_ID, VIVA_API_KEY
 ```
 
-CI (`.github/workflows/ci.yml`) runs staticcheck + vet, and builds the example across five Go versions.
+## CI and releases
 
-`make test` is **not** a test target — it runs `go run example/main.go -race ./...`, which hits the
-live demo API and needs `VIVA_CLIENT_ID`, `VIVA_CLIENT_SECRET`, `VIVA_MERCHANT_ID`, `VIVA_API_KEY`.
-There are no `_test.go` files anywhere in the repo.
+- [ci.yml](.github/workflows/ci.yml): lint (gofmt, tidy, dependency-free check, staticcheck) and
+  govulncheck once on the newest Go; vet/build/test on every Go 1.17–1.26; ginviva on 1.20–1.26.
+  `CI OK` is the single job to mark required in branch protection. Bump `GO_LATEST` and
+  `STATICCHECK` together (each staticcheck release needs a minimum Go to build).
+- [release.yml](.github/workflows/release.yml): publishing is pushing a tag. `vX.Y.Z` must equal
+  `VERSION`; `ginviva/vX.Y.Z` must have no `replace` in `ginviva/go.mod`. It re-runs CI, creates
+  the GitHub release, and warms proxy.golang.org so pkg.go.dev shows it.
 
 ## Architecture
 
@@ -82,8 +89,7 @@ odd-looking code:
   `BasicAuthClient.Patch` has a different signature than `OAuthClient.Patch` (no `v interface{}`),
   so `BasicAuthClient` does not satisfy `Client`.
 - `BalanceTranfer` is misspelled and part of the public API — don't rename without a version bump.
-- `gofmt` is not enforced by CI and `example/main.go`, `transactions.go`, `wallet.go` are currently
-  unformatted. Format code you write; avoid reformatting whole files, which buries the real diff.
+- `gofmt` is enforced by CI (`make fmt-check`); run `gofmt -w` on files you touch.
 
 ## Current branch
 

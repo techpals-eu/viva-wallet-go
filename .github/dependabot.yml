@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Keeps actions/checkout, setup-go etc. current. Grouped so it is one PR, not one per action.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The root module is dependency-free by design; only ginviva has third-party deps.
+  - package-ecosystem: gomod
+    directory: /ginviva
+    schedule:
+      interval: weekly
+    ignore:
+      # The SDK itself is pinned by hand (see the replace note in ginviva/go.mod).
+      - dependency-name: github.com/techpals-eu/viva-wallet-go
+    groups:
+      ginviva:
+        patterns: ["*"]

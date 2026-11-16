@@ -7,7 +7,23 @@ clean-example:
 	rm -rf examp
 
 lint:
-	staticcheck
+	staticcheck ./...
+	cd ginviva && staticcheck ./...
+
+# ci runs locally what the Lint and Test jobs in .github/workflows/ci.yml run.
+ci: fmt-check tidy-check vet lint test
+
+fmt-check:
+	@out="$$(gofmt -l .)"; if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
+
+# go mod tidy -diff needs go 1.23+.
+tidy-check:
+	go mod tidy -diff
+	cd ginviva && go mod tidy -diff
+
+vuln:
+	govulncheck ./...
+	cd ginviva && govulncheck ./...
 
 test:
 	go test -race ./...
@@ -31,4 +47,4 @@ fiscal-demo:
 vet:
 	go vet ./...
 
-.PHONY: clean-example test test-verbose example fiscal-demo
+.PHONY: all ci lint fmt-check tidy-check vuln vet build-example clean-example test test-verbose example fiscal-demo
