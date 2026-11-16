@@ -25,7 +25,7 @@ func main() {
 
 	fmt.Printf("\nCreate order\n")
 	req := vivawallet.CheckoutOrder{
-		Amount: 1000,
+		Amount:  1000,
 		PreAuth: true,
 	}
 	op, err2 := oauthClient.CreateOrderPayment(req)

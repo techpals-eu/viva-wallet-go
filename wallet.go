@@ -62,7 +62,7 @@ func (c BasicAuthClient) GetWallets() ([]Wallet, error) {
 	var r []Wallet
 	err := c.Get(uri, &r)
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 	return r, nil
 }
