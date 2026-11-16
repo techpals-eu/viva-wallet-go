@@ -4,6 +4,11 @@
 **Depends on:** [19](19-isv-credentials-and-client.md)
 **Files:** new `eftpos.go`
 
+**Status (2026-11-16): implemented** in commit 67377ad. Both unresolved items were answered by
+Viva's OpenAPI spec (https://developer.viva.com/downloads/eft-pos-api.yml): the host is
+`(demo-)api.vivapayments.com` (`ApiUri`), and the token scope is `urn:viva:payments:ecr:api`,
+now in the README. The demo run is still outstanding.
+
 ## Problem
 
 The PMS needs to drive Viva physical card terminals over HTTPS: send a sale to a terminal, refund,
