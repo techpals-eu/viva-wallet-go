@@ -1,0 +1,10 @@
+# Vulnerability IDs that scripts/govulncheck.sh does not fail on. One ID per line; text after
+# '#' is a comment. Every entry needs a reason and should be removed as soon as it can be.
+
+# golang.org/x/net HTTP/2 server bugs, reached by ginviva through gin's h2c import. The only
+# fixed x/net release (v0.60.0) requires go 1.26, and ginviva supports go 1.20+. Drop these
+# when ginviva's minimum Go reaches 1.26.
+GO-2026-6603 # memory exhaustion via Trailer headers
+GO-2026-6611 # CPU exhaustion from repeated initial window changes
+GO-2026-6612 # double flow-control refund on server streams
+GO-2026-6617 # crash from HPACK encoder race
