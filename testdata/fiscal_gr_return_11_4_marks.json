@@ -1,0 +1,42 @@
+{
+  "cbChargeItems": [
+    {
+      "amount": -124,
+      "description": "test product refund",
+      "position": 1,
+      "moment": "2026-05-19T00:01:06Z",
+      "quantity": -100,
+      "vatRate": 2400,
+      "vatAmount": -24,
+      "ftChargeItemCase": 5139205309155377171,
+      "currencyCode": "978"
+    }
+  ],
+  "cbPayItems": [
+    {
+      "amount": -124,
+      "description": "test-card-refund",
+      "position": 1,
+      "quantity": -100,
+      "currencyCode": "978",
+      "moment": "2026-05-19T00:01:06Z",
+      "ftPayItemCase": 5139205309155377156
+    }
+  ],
+  "cbReceiptMoment": "2026-05-19T00:01:06Z",
+  "cbReceiptReference": "posactionrefund2",
+  "ftReceiptCase": 5139205309172547585,
+  "currencyCode": "978",
+  "ftReceiptCaseData": {
+    "GR": {
+      "MerchantVATID": "099565360",
+      "Series": "A12341B",
+      "AA": 21333,
+      "HashAlg": "sha256",
+      "HashPayload": "099565360-A12341B-21333-posactionrefund2-2026-05-19T00:01:06Z--1.24",
+      "PreviousReceiptReference": {
+        "invoiceMark": [400001962641135, 400001962641150]
+      }
+    }
+  }
+}
