@@ -6,7 +6,7 @@ Guidance for Claude Code working in this repository.
 
 `github.com/techpals-eu/viva-wallet-go` — a dependency-free Go SDK (package `vivawallet`) wrapping
 the [Viva Wallet payments API](https://developer.vivawallet.com/apis-for-payments/payment-api/).
-Flat package at the repo root; stdlib only (`go.sum` is empty). Targets go 1.17, CI builds 1.16–1.20.
+Flat package at the repo root; stdlib only (`go.sum` is empty). Targets go 1.17; CI builds and tests 1.17–1.26 (ginviva: 1.20–1.26).
 
 ## Commands
 
