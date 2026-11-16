@@ -33,8 +33,11 @@ jobs:
   # ginviva is its own module (it requires gin, which needs go 1.20+), so the root jobs above
   # never build it: `./...` does not descend into a directory with its own go.mod.
   ginviva:
-    name: "ginviva: go v1.20"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20"]
+    name: "ginviva: go v${{ matrix.go }}"
     defaults:
       run:
         working-directory: ginviva
@@ -43,7 +46,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.20"
+          go-version: ${{ matrix.go }}
       - name: Vet
         run: go vet ./...
       - name: Test
@@ -53,11 +56,7 @@ jobs:
      runs-on: ubuntu-latest
      strategy:
        matrix:
-         go:
-           - "1.20"
-           - "1.19"
-           - "1.18"
-           - "1.17"
+         go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20", "1.19", "1.18", "1.17"]
      name: "Build: go v${{ matrix.go }}"
      steps:
        - uses: actions/checkout@v4
@@ -74,11 +73,7 @@ jobs:
      runs-on: ubuntu-latest
      strategy:
        matrix:
-         go:
-           - "1.20"
-           - "1.19"
-           - "1.18"
-           - "1.17"
+         go: ["1.26", "1.25", "1.24", "1.23", "1.22", "1.21", "1.20", "1.19", "1.18", "1.17"]
      name: "Test: go v${{ matrix.go }}"
      steps:
        - uses: actions/checkout@v4
