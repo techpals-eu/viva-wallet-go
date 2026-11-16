@@ -51,6 +51,7 @@ not fixes. **19 gates all of them.**
 | 22 | [Webhook types, verification, and a Gin handler](22-webhooks.md) | Medium |
 | 23 | [Fiscalization scope gap — decision required](23-fiscalization-scope-gap.md) | Medium |
 | 24 | [Docs, example and credential hygiene](24-isv-docs-and-example.md) | Low (one urgent item) |
+| 25 | [Greek fiscalisation: retail receipts](25-greek-fiscalisation.md) | High |
 
 ## Suggested order
 
